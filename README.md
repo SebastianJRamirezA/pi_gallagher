@@ -1,4 +1,4 @@
-# Video Game Programming I
+# P.I. Gallagher: The Missing Art
 
 P.I. Gallagher: The Missing Art is a noir-inspired detective game set in a city where bureaucracy and corruption run deep. When a priceless Renaissance masterwork vanishes from the Del Roscio Museum, private investigator Tim Gallagher and his partner Lauren Summers take on a case that the police couldn't—or wouldn't—solve. What begins as a straightforward recovery job quickly unravels into a web of deceit, high-stakes heist operations, and gang-land corruption.
 
@@ -15,6 +15,10 @@ The project follows the following layout:
 ├── src/               # Game-specific code (states, entities, world, etc.)
 └── assets/            # Images, spritesheets, sounds and fonts (when applicable)
 ```
+
+## Built With
+
+This project is built using [**Gale Engine**](https://pypi.org/project/gale-engine/), a lightweight Python game framework built on top of [**Pygame**](https://www.pygame.org/). Gale provides essential game loop management, state machine architectures, input handling, and rendering utilities tailored for 2D game development.
 
 ## Requirements
 
@@ -41,3 +45,9 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
+
+## Assets & Attributions
+
+This project utilizes original assets along with third-party open-source resources. We express our gratitude to the creators who made their work available to the community:
+
+- **[Kenney](https://kenney.nl/assets)**: Provided a variety of free game assets, including sprites and sound effects, which were used in the development of this game.

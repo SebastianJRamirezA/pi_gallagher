@@ -1,9 +1,5 @@
 """
-ISPPV1 2023
-Study Case: Hello World
-
-Author: Alejandro Mujica
-alejandro.j.mujic4@gmail.com
+P.I. Gallagher: The Missing Art
 
 This file contains the main program to run the game.
 """
