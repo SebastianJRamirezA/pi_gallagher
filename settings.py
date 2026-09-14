@@ -40,19 +40,6 @@ FONTS = {
     "large": pygame.font.Font(None, 34),
 }
 
-COLOR_BACKGROUND = (18, 20, 24)
-COLOR_PANEL = (31, 33, 38)
-COLOR_BRASS = (190, 147, 73)
-COLOR_STEEL = (116, 124, 132)
-COLOR_TEXT = (218, 214, 198)
-COLOR_MUTED = (119, 125, 130)
-COLOR_DANGER = (196, 72, 57)
-COLOR_SUCCESS = (105, 173, 116)
-
-DIAL_SPEED = 72.0
-FINE_DIAL_SPEED = 18.0
-COMBINATION = (32, 74, 18)
-
 
 BASE_DIR = pathlib.Path(__file__).parent
 
