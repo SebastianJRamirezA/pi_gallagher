@@ -14,18 +14,44 @@ from gale import frames
 from gale import input_handler
 
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "rotate_left")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "rotate_left")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "rotate_right")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "rotate_right")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "confirm")
 
 TITLE = "P.I. Gallagher: The Missing Art"
 
 # Size of our actual window. The original creates a plain 320x200
 # window with no virtual-resolution scaling, so window and virtual
 # sizes match here too.
-VIRTUAL_WIDTH = 400
-VIRTUAL_HEIGHT = 192
+VIRTUAL_WIDTH = 480
+VIRTUAL_HEIGHT = 270
 
 # Size we are trying to emulate
-WINDOW_WIDTH = VIRTUAL_WIDTH * 4
-WINDOW_HEIGHT = VIRTUAL_HEIGHT * 4
+WINDOW_WIDTH = 960
+WINDOW_HEIGHT = 540
+
+FONTS = {
+    "small": pygame.font.Font(None, 16),
+    "medium": pygame.font.Font(None, 22),
+    "large": pygame.font.Font(None, 34),
+}
+
+COLOR_BACKGROUND = (18, 20, 24)
+COLOR_PANEL = (31, 33, 38)
+COLOR_BRASS = (190, 147, 73)
+COLOR_STEEL = (116, 124, 132)
+COLOR_TEXT = (218, 214, 198)
+COLOR_MUTED = (119, 125, 130)
+COLOR_DANGER = (196, 72, 57)
+COLOR_SUCCESS = (105, 173, 116)
+
+DIAL_SPEED = 72.0
+FINE_DIAL_SPEED = 18.0
+COMBINATION = (32, 74, 18)
 
 
 BASE_DIR = pathlib.Path(__file__).parent
