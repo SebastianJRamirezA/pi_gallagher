@@ -92,7 +92,8 @@ class Safecracker(Game):
         else:
             travelled = (previous - current) % 360.0
             from_target = (previous - target) % 360.0
-        return 0.0 < from_target <= travelled and self._target_distance() > 1.5
+
+        return 0.0 < from_target <= travelled
 
     @staticmethod
     def _crossed_zero(dial: float, direction: int) -> bool:
