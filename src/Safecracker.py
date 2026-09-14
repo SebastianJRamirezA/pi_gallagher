@@ -9,6 +9,7 @@ import pygame
 from gale.game import Game
 from gale.input_handler import InputData
 from gale.text import render_text
+from gale.timer import Timer
 
 import settings
 
@@ -29,6 +30,8 @@ class Safecracker(Game):
         self.confirm_sound = self._make_tone(310, 0.14)
         self.alarm_sound = self._make_tone(62, 0.28)
 
+        self.timer = 60.0
+
         self.COLOR_BACKGROUND = (18, 20, 24)
         self.COLOR_PANEL = (31, 33, 38)
         self.COLOR_BRASS = (190, 147, 73)
@@ -43,6 +46,16 @@ class Safecracker(Game):
 
         # Build random combination for the safe. This is a list of three numbers between 0 and 99.
         self.COMBINATION = [random.randint(0, 99) for _ in range(3)]
+
+        def decrement_timer():
+            self.timer -= 1
+
+            # Play warning sound on timer if we get low
+            if self.timer <= 5:
+                settings.SOUNDS["clock"].play()
+
+        Timer.every(1, decrement_timer)
+
 
     def _make_tone(self, frequency: int, duration: float = 0.055):
         """Create a short metal-like cue without requiring an asset file."""
@@ -90,6 +103,9 @@ class Safecracker(Game):
             self.overshot = False
             self.click_number = 0
             self.message = "Reset. Approach the number more carefully."
+
+        if self.timer <= 0:
+            Timer.clear()
 
     def _dial_number(self) -> int:
         return int(round(self.dial / 3.6)) % 100
@@ -167,6 +183,9 @@ class Safecracker(Game):
         pygame.draw.rect(surface, (53, 50, 48), (345, 72, 92, 9))
         pygame.draw.rect(surface, self.COLOR_DANGER if stress > 0.8 else self.COLOR_BRASS, (345, 72, int(92 * stress), 9))
         render_text(surface, "STRESS", settings.FONTS["small"], 345, 55, self.COLOR_MUTED)
+
+        render_text(surface, "TIME: " + str(self.timer), settings.FONTS["small"], 345, 105, self.COLOR_MUTED)
+
         render_text(surface, "A/D or arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["small"], 30, 260, self.COLOR_MUTED)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:

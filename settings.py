@@ -52,3 +52,7 @@ FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
     "indoor_tiles": frames.generate_frames(TEXTURES["indoor_tiles"], 16, 16),
 }
+
+SOUNDS = {
+    "clock": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "clock.wav"),
+}
