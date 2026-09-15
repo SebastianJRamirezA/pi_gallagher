@@ -94,7 +94,7 @@ class Safecracker(Game):
             elif not self.overshot and current_number != self.click_number:
                 self.click_number = current_number
                 distance = self._target_distance()
-                self._play(self.heavy_click_sound if distance <= 4 else self.click_sound)
+                self._play(self.heavy_click_sound if distance <= 8 else self.click_sound)
                 if distance <= 3:
                     self.stutter_time = 0.07
 
@@ -142,6 +142,7 @@ class Safecracker(Game):
             self.stage += 1
             if self.stage == len(self.COMBINATION):
                 self.complete = True
+                Timer.clear()
                 self.message = "The tumblers fall. The safe is open."
             else:
                 self.dial = 0.0
