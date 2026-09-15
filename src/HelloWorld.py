@@ -14,29 +14,26 @@ import pygame
 from gale.game import Game
 from gale.input_handler import InputData
 from gale.text import render_text
+from gale.state import StateStack
 
 import settings
+from src.states.StartState import StartState
 
 
 class HelloWorld(Game):
     def init(self) -> None:
-        pass
+        self.state_stack = StateStack()
+        self.state_stack.push(StartState(self.state_stack))
 
     def update(self, dt: float) -> None:
-        pass
+        self.state_stack.update(dt)
 
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((0, 0, 0))
-        render_text(
-            surface,
-            "Hello world!",
-            settings.FONTS["default"],
-            settings.VIRTUAL_WIDTH / 2,
-            settings.VIRTUAL_HEIGHT / 2,
-            (255, 255, 255),
-            center=True,
-        )
+        self.state_stack.render(surface)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:
             self.quit()
+            return
+
+        self.state_stack.on_input(input_id, input_data)
