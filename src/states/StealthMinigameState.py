@@ -323,7 +323,13 @@ class StealthMinigameState(BaseState):
     def _check_goal(self) -> None:
         if self.player.colliderect(self.goal):
             print("¡Objetivo alcanzado! El detective ha cruzado sin ser visto.")
-            self._reset_player()
+            # self._reactivate_door()
+            self.state_machine.pop()
+
+    def _reactivate_door(self) -> None:
+        door = getattr(self, "door", None)
+        if door is not None and hasattr(door, "active"):
+            door.active = True
 
     def _reset_player(self) -> None:
         self.player.x = self.player_spawn[0]

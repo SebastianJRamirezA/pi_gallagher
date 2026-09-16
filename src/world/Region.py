@@ -25,7 +25,7 @@ class Region:
 
     def _create_center(self) -> TileMap:
         tilemap = TileMap(settings.TILE_SIZE, settings.TILE_SIZE, settings.TILE_WIDTH, settings.TILE_HEIGHT)
-        tilemap.add_tileset(settings.TILESETS["rpg_tileset.tsx"])
+        tilemap.add_tileset(settings.TILESETS["rpg_tileset.tsj"])
         floor = tilemap.add_layer("Floor")
         walls = tilemap.add_layer("Walls")
         floor_tile = 6

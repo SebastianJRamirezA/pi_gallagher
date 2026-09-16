@@ -29,8 +29,10 @@ class SuccessSubstate(BaseState):
             self.alpha = min(255, self.alpha + 150 * dt)
 
     def on_input(self, input_id, input_data):
-        # Success screen stays until player quits via ESC
-        pass
+        if input_data.pressed and input_id in {"confirm", "enter", "interact"}:
+            # if getattr(self.parent, "door", None) is not None:
+            #     self.parent.door.active = True
+            self.parent.state_machine.pop()
 
     def render(self, surface):
         surface.fill(COLORS["background"])
