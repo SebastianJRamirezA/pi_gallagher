@@ -66,17 +66,17 @@ class PhaseASubstate(BaseState):
             return
 
         # Navigation
-        if input_id == "left":
+        if input_id == "move_left":
             self.selected_cat = max(0, self.selected_cat - 1)
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(self.selected_drawer, max_d)
-        elif input_id == "right":
+        elif input_id == "move_right":
             self.selected_cat = min(len(CATEGORY_ORDER) - 1, self.selected_cat + 1)
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(self.selected_drawer, max_d)
-        elif input_id == "up":
+        elif input_id == "move_up":
             self.selected_drawer = max(0, self.selected_drawer - 1)
-        elif input_id == "down":
+        elif input_id == "move_down":
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(max_d, self.selected_drawer + 1)
         elif input_id == "confirm":
