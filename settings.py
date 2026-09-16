@@ -81,14 +81,14 @@ TILE_WIDTH = VIRTUAL_WIDTH // TILE_SIZE
 TILE_HEIGHT = VIRTUAL_HEIGHT // TILE_SIZE
 CAMERA_FOLLOW_RATE = 8.0
 TILESET_IMAGES = {
-    "rpg_tileset.tsx": TEXTURES["rpg_tiles"],
-    "indoor_tileset.tsx": TEXTURES["indoor_tiles"],
-    "city_tileset.tsx": TEXTURES["city_tiles"],
+    "rpg_tileset.tsj": TEXTURES["rpg_tiles"],
+    "indoor_tileset.tsj": TEXTURES["indoor_tiles"],
+    "city_tileset.tsj": TEXTURES["city_tiles"],
 }
 TILESETS = {
-    "rpg_tileset.tsx": tilemap.Tileset(TEXTURES["rpg_tiles"], TILE_SIZE, TILE_SIZE, 1, spacing=1),
-    "indoor_tileset.tsx": tilemap.Tileset(TEXTURES["indoor_tiles"], TILE_SIZE, TILE_SIZE, 1768, spacing=1),
-    "city_tileset.tsx": tilemap.Tileset(TEXTURES["city_tiles"], TILE_SIZE, TILE_SIZE, 2254, spacing=1),
+    "rpg_tileset.tsj": tilemap.Tileset(TEXTURES["rpg_tiles"], TILE_SIZE, TILE_SIZE, 1, spacing=1),
+    "indoor_tileset.tsj": tilemap.Tileset(TEXTURES["indoor_tiles"], TILE_SIZE, TILE_SIZE, 1768, spacing=1),
+    "city_tileset.tsj": tilemap.Tileset(TEXTURES["city_tiles"], TILE_SIZE, TILE_SIZE, 2254, spacing=1),
 }
 
 FONTS = {

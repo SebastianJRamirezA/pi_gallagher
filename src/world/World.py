@@ -11,7 +11,7 @@ from src.world.Region import Region
 
 
 class World:
-    DOOR_TARGETS = ("office", "museum", "nightclub", None, "alley")
+    DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
 
     def __init__(self, stack: StateStack) -> None:
@@ -22,6 +22,7 @@ class World:
             "museum": Region("museum", map_dir / "museum.json"),
             "nightclub": Region("nightclub", map_dir / "nightclub.json"),
             "office": Region("office", map_dir / "office.json"),
+            "police_station": Region("police_station", map_dir / "police_station.json"),
             "alley": Region("alley", map_dir / "alley.json"),
         }
         self.current_region_name = "city"

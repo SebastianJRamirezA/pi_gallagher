@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="2">
- <tileset firstgid="1" source="../graphics/rpg_tileset.tsx"/>
- <tileset firstgid="1768" source="../graphics/indoor_tileset.tsx"/>
- <tileset firstgid="2254" source="../graphics/city_tileset.tsx"/>
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="6">
+ <tileset firstgid="1" source="../graphics/rpg_tileset.tsj"/>
+ <tileset firstgid="1768" source="../graphics/indoor_tileset.tsj"/>
+ <tileset firstgid="2254" source="../graphics/city_tileset.tsj"/>
  <layer id="1" name="Floor" width="30" height="20">
   <data encoding="csv">
 1432,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1433,1434,
@@ -100,6 +100,6 @@
 </data>
  </layer>
  <objectgroup id="5" name="Doors">
-  <object id="1" x="192.092" y="264.171" width="31.9562" height="14.9129"/>
+  <object id="1" name="exit" x="192.092" y="264.171" width="31.9562" height="14.9129"/>
  </objectgroup>
 </map>

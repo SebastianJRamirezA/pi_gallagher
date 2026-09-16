@@ -3,8 +3,8 @@
  <editorsettings>
   <export target="office.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" source="../graphics/rpg_tileset.tsx"/>
- <tileset firstgid="1768" source="../graphics/indoor_tileset.tsx"/>
+ <tileset firstgid="1" source="../graphics/rpg_tileset.tsj"/>
+ <tileset firstgid="1768" source="../graphics/indoor_tileset.tsj"/>
  <tileset firstgid="2254" source="../graphics/city_tileset.tsj"/>
  <layer id="1" name="Floor" width="30" height="20">
   <data encoding="csv">
@@ -79,6 +79,6 @@
 </data>
  </layer>
  <objectgroup id="5" name="Doors">
-  <object id="1" x="296.483" y="80.6007" width="13.4926" height="30.891"/>
+  <object id="1" name="exit" x="296.483" y="80.6007" width="13.4926" height="30.891"/>
  </objectgroup>
 </map>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="7">
- <tileset firstgid="1" source="../graphics/indoor_tileset.tsx"/>
- <tileset firstgid="487" source="../graphics/rpg_tileset.tsx"/>
- <tileset firstgid="2254" source="../graphics/city_tileset.tsx"/>
+ <tileset firstgid="1" source="../graphics/indoor_tileset.tsj"/>
+ <tileset firstgid="487" source="../graphics/rpg_tileset.tsj"/>
+ <tileset firstgid="2254" source="../graphics/city_tileset.tsj"/>
  <layer id="1" name="Floor" width="30" height="20">
   <data encoding="csv">
 79,79,79,79,132,133,133,133,133,133,133,134,79,79,79,79,79,79,79,79,1002,1003,1003,1003,1003,1003,1003,1003,1003,1004,
