@@ -212,22 +212,22 @@ class StealthMinigameState(BaseState):
             self.detected_timer -= dt
 
     def on_input(self, input_id, input_data):
-        if input_id == "up":
+        if input_id == "move_up":
             if input_data.pressed: 
                 self.player_speed_y = -60.0
             elif input_data.released: 
                 self.player_speed_y = 0.0
-        elif input_id == "down":
+        elif input_id == "move_down":
             if input_data.pressed: 
                 self.player_speed_y = 60.0
             elif input_data.released: 
                 self.player_speed_y = 0.0
-        elif input_id == "right":
+        elif input_id == "move_right":
             if input_data.pressed: 
                 self.player_speed_x = 60.0
             elif input_data.released: 
                 self.player_speed_x = 0.0
-        elif input_id == "left":
+        elif input_id == "move_left":
             if input_data.pressed: 
                 self.player_speed_x = -60.0
             elif input_data.released: 

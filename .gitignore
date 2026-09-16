@@ -1,5 +1,8 @@
 specifications/
 minigame_specification.md
+# Tiled temp files
+*.tiled-project
+*.tiled-session
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

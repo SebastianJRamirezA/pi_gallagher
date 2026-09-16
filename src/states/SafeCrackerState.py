@@ -193,9 +193,9 @@ class SafeCrackerState(BaseState):
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:
             self.quit()
-        elif input_id in ("rotate_left", "left"):
+        elif input_id in ("rotate_left", "move_left"):
             self.turning = -1 if not input_data.released else 0
-        elif input_id in ("rotate_right", "right"):
+        elif input_id in ("rotate_right", "move_right"):
             self.turning = 1 if not input_data.released else 0
         elif input_id == "fine":
             self.fine_control = not input_data.released
