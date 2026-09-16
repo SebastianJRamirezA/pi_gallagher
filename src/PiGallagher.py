@@ -17,6 +17,8 @@ from gale.text import render_text
 from gale.state import StateStack
 from src.states.StealthMinigameState import StealthMinigameState
 from src.states.SafeCrackerState import SafeCrackerState
+from src.states.PoliceArchiveState import PoliceArchiveState
+
 import settings
 from src.states.StartState import StartState
 
