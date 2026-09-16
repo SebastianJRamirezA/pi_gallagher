@@ -10,6 +10,7 @@ class Region:
     def __init__(self, name: str, map_path: pathlib.Path | None = None) -> None:
         self.name = name
         self.npcs = []
+        self.triggers = []
         self.map_path = map_path
 
         if map_path is None:

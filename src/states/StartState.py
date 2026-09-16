@@ -18,7 +18,7 @@ class StartState(BaseState):
         surface.blit(prompt, prompt.get_rect(center=(settings.VIRTUAL_WIDTH / 2, 236)))
 
     def on_input(self, input_id: str, input_data: Any) -> None:
-        if input_id == "enter" and input_data.pressed:
+        if input_id in ("enter", "confirm", "interact") and input_data.pressed:
             from src.states.PlayState import PlayState
 
             self.state_machine.pop()

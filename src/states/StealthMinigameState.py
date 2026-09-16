@@ -323,7 +323,11 @@ class StealthMinigameState(BaseState):
     def _check_goal(self) -> None:
         if self.player.colliderect(self.goal):
             print("¡Objetivo alcanzado! El detective ha cruzado sin ser visto.")
-            # self._reactivate_door()
+            from src.story.StoryManager import StoryManager
+            story = StoryManager.get_instance()
+            for c in ("C09", "C11"):
+                story.add_card(c)
+            story.flags["stealth_completed"] = True
             self.state_machine.pop()
 
     def _reactivate_door(self) -> None:

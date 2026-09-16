@@ -145,6 +145,11 @@ class SafeCrackerState(BaseState):
             if self.stage == len(self.COMBINATION):
                 self.complete = True
                 Timer.clear()
+                from src.story.StoryManager import StoryManager
+                story = StoryManager.get_instance()
+                for c in ("C15", "C16", "C17"):
+                    story.add_card(c)
+                story.flags["safecracker_completed"] = True
                 self.message = "The tumblers fall. The safe is open."
                 self.state_machine.pop()
             else:
