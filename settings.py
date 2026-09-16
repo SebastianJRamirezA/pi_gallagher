@@ -21,6 +21,10 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "rotate_
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "confirm")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "up")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "down")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "right")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "left")
 
 TITLE = "P.I. Gallagher: The Missing Art"
 
