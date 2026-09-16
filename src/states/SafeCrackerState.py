@@ -10,12 +10,13 @@ from gale.game import Game
 from gale.input_handler import InputData
 from gale.text import render_text
 from gale.timer import Timer
+from gale.state import BaseState
 
 import settings
 
 
-class Safecracker(Game):
-    def init(self) -> None:
+class SafeCrackerState(BaseState):
+    def enter(self) -> None:
         self.dial = 0.0
         self.stage = 0
         self.turning = 0
@@ -192,9 +193,9 @@ class Safecracker(Game):
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:
             self.quit()
-        elif input_id == "rotate_left":
+        elif input_id in ("rotate_left", "left"):
             self.turning = -1 if not input_data.released else 0
-        elif input_id == "rotate_right":
+        elif input_id in ("rotate_right", "right"):
             self.turning = 1 if not input_data.released else 0
         elif input_id == "fine":
             self.fine_control = not input_data.released

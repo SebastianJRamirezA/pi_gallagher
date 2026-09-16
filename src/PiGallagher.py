@@ -17,6 +17,7 @@ from gale.text import render_text
 from gale.state import StateStack
 
 from src.states.StealthMinigameState import StealthMinigameState
+from src.states.SafeCrackerState import SafeCrackerState
 
 import settings
 
@@ -24,7 +25,7 @@ import settings
 class PiGallagher(Game):
     def init(self) -> None:
         self.state_machine = StateStack()
-        self.state_machine.push(StealthMinigameState(self.state_machine))
+        self.state_machine.push(SafeCrackerState(self.state_machine))
 
     def update(self, dt: float) -> None:
         self.state_machine.update(dt)

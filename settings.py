@@ -15,9 +15,7 @@ from gale import input_handler
 
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_ESCAPE, "quit")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "rotate_left")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "rotate_left")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "rotate_right")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "rotate_right")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "confirm")
