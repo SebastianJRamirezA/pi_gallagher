@@ -103,14 +103,14 @@
                 {
                  "height":0,
                  "id":1,
-                 "name":"",
+                 "name":"exit",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":295.417390982727,
-                 "y":308.910012205496
+                 "x":295.417,
+                 "y":308.91
                 }],
          "opacity":1,
          "type":"objectgroup",

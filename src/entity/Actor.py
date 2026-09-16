@@ -51,8 +51,8 @@ class Actor:
         self.texture = texture
         self.name = name
         self.direction = direction
-        self.width = 14
-        self.height = 18
+        self.width = 16
+        self.height = 16
 
     @property
     def rect(self) -> pygame.Rect:

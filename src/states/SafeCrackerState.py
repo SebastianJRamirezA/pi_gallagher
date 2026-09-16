@@ -78,6 +78,7 @@ class SafeCrackerState(BaseState):
 
     def update(self, dt: float) -> None:
         if self.complete:
+            self.state_machine.pop()
             return
 
         if self.turning:
@@ -145,12 +146,18 @@ class SafeCrackerState(BaseState):
                 self.complete = True
                 Timer.clear()
                 self.message = "The tumblers fall. The safe is open."
+                self.state_machine.pop()
             else:
                 self.dial = 0.0
                 self.click_number = -1
                 self.message = "Good. The next tumbler is listening."
         else:
             self.message = "That is not the number. Move closer and listen."
+
+    def _reactivate_door(self) -> None:
+        door = getattr(self, "door", None)
+        if door is not None and hasattr(door, "active"):
+            door.active = True
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill(self.COLOR_BACKGROUND)

@@ -3,8 +3,8 @@
  <editorsettings>
   <export target="alley.json" format="json"/>
  </editorsettings>
- <tileset firstgid="1" source="../graphics/city_tileset.tsx"/>
- <tileset firstgid="1037" source="../graphics/rpg_tileset.tsx"/>
+ <tileset firstgid="1" source="../graphics/city_tileset.tsj"/>
+ <tileset firstgid="1037" source="../graphics/rpg_tileset.tsj"/>
  <layer id="1" name="Floor" width="30" height="20">
   <data encoding="csv">
 711,711,711,711,711,711,711,711,711,711,711,711,711,711,711,711,711,711,711,0,0,0,0,0,0,0,0,0,0,0,
@@ -78,6 +78,6 @@
 </data>
  </layer>
  <objectgroup id="4" name="Doors">
-  <object id="1" x="295.417" y="308.91"/>
+  <object id="1" name="exit" x="295.417" y="308.91"/>
  </objectgroup>
 </map>

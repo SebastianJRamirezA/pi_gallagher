@@ -126,15 +126,15 @@ class PhaseBSubstate(BaseState):
         col = self.selected_doc % self.DOC_COLS
         row = self.selected_doc // self.DOC_COLS
 
-        if input_id == "left" and col > 0:
+        if input_id == "move_left" and col > 0:
             self.selected_doc -= 1
-        elif input_id == "right" and col < self.DOC_COLS - 1:
+        elif input_id == "move_right" and col < self.DOC_COLS - 1:
             next_idx = self.selected_doc + 1
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
-        elif input_id == "up" and row > 0:
+        elif input_id == "move_up" and row > 0:
             self.selected_doc -= self.DOC_COLS
-        elif input_id == "down" and row < self.DOC_ROWS - 1:
+        elif input_id == "move_down" and row < self.DOC_ROWS - 1:
             next_idx = self.selected_doc + self.DOC_COLS
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
