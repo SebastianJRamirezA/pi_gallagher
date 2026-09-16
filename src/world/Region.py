@@ -85,21 +85,21 @@ class Region:
         ]
         center_col = self.tilemap.cols / 2
         center_row = self.tilemap.rows / 2
-        if side == "north":
+        if side == "museum":
             return min(candidates, key=lambda tile: (tile[1], abs(tile[0] - center_col)))
         if side == "south":
             return max(candidates, key=lambda tile: (tile[1], -abs(tile[0] - center_col)))
-        if side == "west":
+        if side == "office":
             return min(candidates, key=lambda tile: (tile[0], abs(tile[1] - center_row)))
         return max(candidates, key=lambda tile: (tile[0], -abs(tile[1] - center_row)))
 
     def entry_position(self, side: str) -> tuple[float, float]:
         col, row = self._edge_tile(side)
-        if side == "north":
+        if side == "museum":
             row += 2
         elif side == "south":
             row -= 2
-        elif side == "west":
+        elif side == "office":
             col += 2
         else:
             col -= 2
@@ -112,16 +112,16 @@ class Region:
         col, row = self._edge_tile(side)
         player_col = player_rect.centerx // settings.TILE_SIZE
         player_row = player_rect.centery // settings.TILE_SIZE
-        if side == "north":
+        if side == "museum":
             return player_row <= row + 1
         if side == "south":
             return player_row >= row - 1
-        if side == "west":
+        if side == "office":
             return player_col <= col + 1
         return player_col >= col - 1
 
-    def render(self, surface: pygame.Surface) -> None:
+    def render(self, surface: pygame.Surface, camera=None) -> None:
         surface.fill((25, 25, 28))
-        self.tilemap.render(surface)
+        self.tilemap.render(surface, camera)
         for npc in self.npcs:
-            npc.render(surface)
+            npc.render(surface, camera)

@@ -69,6 +69,7 @@ FRAMES = {
 TILE_SIZE = 16
 TILE_WIDTH = VIRTUAL_WIDTH // TILE_SIZE
 TILE_HEIGHT = VIRTUAL_HEIGHT // TILE_SIZE
+CAMERA_FOLLOW_RATE = 8.0
 TILESET_IMAGES = {
     "rpg_tileset.tsx": TEXTURES["rpg_tiles"],
     "indoor_tileset.tsx": TEXTURES["indoor_tiles"],

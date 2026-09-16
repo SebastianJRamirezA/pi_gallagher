@@ -27,9 +27,12 @@ class Actor:
     def rect(self) -> pygame.Rect:
         return pygame.Rect(round(self.x + 1), round(self.y - 2), self.width, self.height)
 
-    def render(self, surface: pygame.Surface) -> None:
+    def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         frame = settings.FRAMES[self.texture][DIRECTIONS[self.direction]]
-        surface.blit(settings.TEXTURES[self.texture], (round(self.x), round(self.y)), frame)
+        position = pygame.Rect(round(self.x), round(self.y), self.width, self.height)
+        if camera is not None:
+            position = camera.apply(position)
+        surface.blit(settings.TEXTURES[self.texture], position, frame)
 
 
 class Player(Actor):

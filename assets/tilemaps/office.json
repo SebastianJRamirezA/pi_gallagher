@@ -94,9 +94,32 @@
          "width":30,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":5,
+         "name":"Doors",
+         "objects":[
+                {
+                 "height":30.8910012205496,
+                 "id":1,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":13.4926212227688,
+                 "x":296.482597921367,
+                 "y":80.6006583570663
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":5,
- "nextobjectid":1,
+ "nextlayerid":6,
+ "nextobjectid":2,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2-2-geb83ddb9",
@@ -109,6 +132,10 @@
         {
          "firstgid":1768,
          "source":"..\/graphics\/indoor_tileset.tsj"
+        }, 
+        {
+         "firstgid":2254,
+         "source":"..\/graphics\/city_tileset.tsj"
         }],
  "tilewidth":16,
  "type":"map",

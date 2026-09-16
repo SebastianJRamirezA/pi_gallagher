@@ -2,6 +2,7 @@ import pathlib
 from typing import Any
 
 import pygame
+from gale.camera import Camera
 from gale.state import StateStack
 
 import settings
@@ -10,17 +11,27 @@ from src.world.Region import Region
 
 
 class World:
+    DOOR_TARGETS = ("office", "museum", "nightclub", None, "alley")
+    CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
+
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
         map_dir = pathlib.Path(settings.BASE_DIR) / "assets" / "tilemaps"
         self.regions = {
-            "center": Region("center"),
-            "north": Region("north", map_dir / "museum.json"),
-            "east": Region("east", map_dir / "nightclub.json"),
-            "west": Region("west", map_dir / "office.json"),
+            "city": Region("city", map_dir / "city.json"),
+            "museum": Region("museum", map_dir / "museum.json"),
+            "nightclub": Region("nightclub", map_dir / "nightclub.json"),
+            "office": Region("office", map_dir / "office.json"),
+            "alley": Region("alley", map_dir / "alley.json"),
         }
-        self.current_region_name = "center"
-        self.player = Player(settings.VIRTUAL_WIDTH / 2 - 8, settings.VIRTUAL_HEIGHT / 2 - 10)
+        self.current_region_name = "city"
+        city = self.regions["city"]
+        self.player = Player(city.width / 2 - 8, city.height / 2 - 10)
+        self.camera = Camera(settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT)
+        self.camera.follow(self.player, rate=settings.CAMERA_FOLLOW_RATE)
+        self._update_camera_bounds()
+        self.camera.x, self.camera.y = self.player.x, self.player.y
+        self.camera.update(0)
         self._populate_npcs()
 
     @property
@@ -60,7 +71,8 @@ class World:
         self.player.move(dx, dy)
         self._move_axis(dx * Player.SPEED * dt, 0)
         self._move_axis(0, dy * Player.SPEED * dt)
-        self._check_exit()
+        self._check_door_collision()
+        self.camera.update(dt)
 
     def _move_axis(self, dx: float, dy: float) -> None:
         if not dx and not dy:
@@ -70,43 +82,62 @@ class World:
             self.player.x += dx
             self.player.y += dy
 
-    def _check_exit(self) -> None:
-        if self.current_region_name != "center":
-            return_side = {
-                "north": "south",
-                "west": "east",
-                "east": "west",
-            }[self.current_region_name]
-            if self.region.at_entry(self.player.rect, return_side):
-                self.current_region_name = "center"
-                if return_side == "south":
-                    self.player.x, self.player.y = self.player.x, 18
-                elif return_side == "east":
-                    self.player.x, self.player.y = self.region.width - 30, self.player.y
-                else:
-                    self.player.x, self.player.y = 18, self.player.y
+    def _door_collides(self, door) -> bool:
+        return self._door_collides_rect(self.player.rect, door)
+
+    @staticmethod
+    def _door_collides_rect(player_rect: pygame.Rect, door) -> bool:
+        if not door.width or not door.height:
+            return player_rect.collidepoint(round(door.x), round(door.y))
+        door_rect = pygame.Rect(
+            round(door.x), round(door.y), round(door.width), round(door.height)
+        )
+        return player_rect.colliderect(door_rect)
+
+    def _check_door_collision(self) -> None:
+        for index, door in enumerate(self._door_objects()[:len(self.DOOR_TARGETS)]):
+            if not self._door_collides(door):
+                continue
+            if self.current_region_name == "city":
+                target = self.DOOR_TARGETS[index]
+                if target is None:
+                    return
+                self.current_region_name = target
+                self.player.x, self.player.y = self.region.entry_position("south")
+            else:
+                self._return_to_city()
+            self._update_camera_bounds()
             return
 
-        col = int((self.player.x + 8) // settings.TILE_SIZE)
-        row = int((self.player.y + 10) // settings.TILE_SIZE)
-        middle_col = self.region.tilemap.cols // 2
-        middle_row = self.region.tilemap.rows // 2
-        target = None
-        spawn = (self.player.x, self.player.y)
-        if row <= 0 and abs(col - middle_col) <= 2:
-            target, spawn = "north", (self.player.x, self.region.height - 30)
-        elif col <= 0 and abs(row - middle_row) <= 2:
-            target, spawn = "west", (self.region.width - 30, self.player.y)
-        elif col >= self.region.tilemap.cols - 1 and abs(row - middle_row) <= 2:
-            target, spawn = "east", (18, self.player.y)
+    def _return_to_city(self) -> None:
+        city_door = self.regions["city"].tilemap.object_layers["Doors"][
+            self.CITY_DOOR_INDEX[self.current_region_name]
+        ]
+        door_center = pygame.Vector2(
+            city_door.x + city_door.width / 2,
+            city_door.y + city_door.height / 2,
+        )
+        for offset_x, offset_y in (
+            (0, 20), (0, -20), (20, 0), (-20, 0),
+            (14, 14), (-14, 14), (14, -14), (-14, -14),
+        ):
+            x = door_center.x + offset_x - 1
+            y = door_center.y + offset_y + 2
+            player_rect = pygame.Rect(round(x + 1), round(y - 2), 14, 18)
+            if (
+                self.regions["city"].is_walkable(player_rect)
+                and not self._door_collides_rect(player_rect, city_door)
+            ):
+                self.current_region_name = "city"
+                self.player.x, self.player.y = x, y
+                return
+        raise RuntimeError(f"No walkable spawn found near {self.current_region_name} door")
 
-        if target in self.regions:
-            target_side = {"north": "south", "west": "east", "east": "west"}[target]
-            self.current_region_name = target
-            if target == "center":
-                self.player.x, self.player.y = spawn
-            else:
-                self.player.x, self.player.y = self.region.entry_position(target_side)
+    def _update_camera_bounds(self) -> None:
+        self.camera.bounds = pygame.Rect(0, 0, self.region.width, self.region.height)
+
+    def _door_objects(self):
+        return self.region.tilemap.object_layers.get("Doors", [])
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         self.player.on_input(input_id, input_data)
@@ -128,5 +159,5 @@ class World:
             self.player.held[key] = False
 
     def render(self, surface: pygame.Surface) -> None:
-        self.region.render(surface)
-        self.player.render(surface)
+        self.region.render(surface, self.camera)
+        self.player.render(surface, self.camera)

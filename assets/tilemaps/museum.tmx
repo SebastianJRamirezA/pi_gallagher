@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="2">
  <tileset firstgid="1" source="../graphics/rpg_tileset.tsx"/>
  <tileset firstgid="1768" source="../graphics/indoor_tileset.tsx"/>
  <tileset firstgid="2254" source="../graphics/city_tileset.tsx"/>
@@ -99,4 +99,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup id="5" name="Doors">
+  <object id="1" x="192.092" y="264.171" width="31.9562" height="14.9129"/>
+ </objectgroup>
 </map>
