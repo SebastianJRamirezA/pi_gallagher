@@ -15,12 +15,13 @@ from gale.game import Game
 from gale.input_handler import InputData
 from gale.text import render_text
 from gale.state import StateStack
-
+from src.states.StealthMinigameState import StealthMinigameState
+from src.states.SafeCrackerState import SafeCrackerState
 import settings
 from src.states.StartState import StartState
 
 
-class HelloWorld(Game):
+class PiGallagher(Game):
     def init(self) -> None:
         self.state_stack = StateStack()
         self.state_stack.push(StartState(self.state_stack))

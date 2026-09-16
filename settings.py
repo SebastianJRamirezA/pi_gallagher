@@ -23,6 +23,11 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "interac
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p, "pause")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "rotate_left")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "rotate_right")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "confirm")
 
 TITLE = "P.I. Gallagher: The Missing Art"
 
@@ -30,12 +35,17 @@ TITLE = "P.I. Gallagher: The Missing Art"
 # window with no virtual-resolution scaling, so window and virtual
 # sizes match here too.
 VIRTUAL_WIDTH = 480
-VIRTUAL_HEIGHT = 320
+VIRTUAL_HEIGHT = 270
 
 # Size we are trying to emulate
 WINDOW_WIDTH = VIRTUAL_WIDTH * 3
 WINDOW_HEIGHT = VIRTUAL_HEIGHT * 3
 
+FONTS = {
+    "small": pygame.font.Font(None, 16),
+    "medium": pygame.font.Font(None, 22),
+    "large": pygame.font.Font(None, 34),
+}
 
 BASE_DIR = pathlib.Path(__file__).parent
 
@@ -85,4 +95,8 @@ FONTS = {
     "small": pygame.font.Font(None, 18),
     "medium": pygame.font.Font(None, 26),
     "large": pygame.font.Font(None, 42),
+}
+
+SOUNDS = {
+    "clock": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "clock.wav"),
 }
