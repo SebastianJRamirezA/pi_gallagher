@@ -68,12 +68,14 @@ def _actor_sheet(color):
 
 TEXTURES["player"] = _actor_sheet((190, 205, 220))
 TEXTURES["npc"] = _actor_sheet((210, 165, 105))
+TEXTURES["gallagher"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "gallagher.png")
 
 FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
     "indoor_tiles": frames.generate_frames(TEXTURES["indoor_tiles"], 16, 16),
     "player": frames.generate_frames(TEXTURES["player"], 16, 18),
     "npc": frames.generate_frames(TEXTURES["npc"], 16, 18),
+    "gallagher": frames.generate_frames(TEXTURES["gallagher"], 19, 28),
 }
 
 TILE_SIZE = 16

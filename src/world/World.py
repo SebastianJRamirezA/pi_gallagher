@@ -71,6 +71,7 @@ class World:
         self.player.move(dx, dy)
         self._move_axis(dx * Player.SPEED * dt, 0)
         self._move_axis(0, dy * Player.SPEED * dt)
+        self.player.update(dt)
         self._check_door_collision()
         self.camera.update(dt)
 
