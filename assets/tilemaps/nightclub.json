@@ -103,7 +103,7 @@
                 {
                  "height":11.3622,
                  "id":5,
-                 "name":"",
+                 "name":"exit",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
@@ -111,6 +111,30 @@
                  "width":30.5359,
                  "x":209.136,
                  "y":266.302
+                }, 
+                {
+                 "height":45.4488293819581,
+                 "id":7,
+                 "name":"stealth",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":91.6077967230092,
+                 "x":385.959980767097,
+                 "y":1.42027591818619
+                }, 
+                {
+                 "height":21.6592077523394,
+                 "id":13,
+                 "name":"safecracker",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":27.3403114250842,
+                 "x":98.3541073343936,
+                 "y":32.6663461182824
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -119,7 +143,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":7,
+ "nextobjectid":16,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2-2-geb83ddb9",

@@ -7,12 +7,20 @@ from gale.state import StateStack
 
 import settings
 from src.entity.Actor import NPC, Player
+from src.states.PoliceArchiveState import PoliceArchiveState
+from src.states.SafeCrackerState import SafeCrackerState
+from src.states.StealthMinigameState import StealthMinigameState
 from src.world.Region import Region
 
 
 class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
+    MINIGAME_STATES = {
+        "stealth": StealthMinigameState,
+        "archive": PoliceArchiveState,
+        "safecracker": SafeCrackerState,
+    }
 
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
@@ -95,18 +103,65 @@ class World:
         )
         return player_rect.colliderect(door_rect)
 
+    @staticmethod
+    def _door_name(door) -> str:
+        return str(getattr(door, "name", "") or "").strip().lower()
+
+    @staticmethod
+    def _door_is_active(door) -> bool:
+        return bool(getattr(door, "active", True))
+
+    @staticmethod
+    def _set_door_active(door, active: bool) -> None:
+        setattr(door, "active", bool(active))
+
+    def _minigame_for_door(self, door):
+        return self.MINIGAME_STATES.get(self._door_name(door))
+
+    def _start_minigame(self, door) -> None:
+        state_cls = self._minigame_for_door(door)
+        if state_cls is None or not self._door_is_active(door):
+            return
+        self._set_door_active(door, False)
+        self._clear_movement()
+        state = state_cls(self.stack)
+        state.door = door
+        self.stack.push(state)
+
     def _check_door_collision(self) -> None:
+        for door in self._door_objects():
+            if not self._door_collides(door):
+                continue
+
+            door_name = self._door_name(door)
+            if self.current_region_name == "city":
+                if door_name not in self.CITY_DOOR_INDEX:
+                    continue
+                self.current_region_name = door_name
+                self.player.x, self.player.y = self.region.entry_position("south")
+                self._update_camera_bounds()
+                return
+
+            if door_name == "exit":
+                self._return_to_city()
+                self._update_camera_bounds()
+                return
+
+            if self._minigame_for_door(door) is not None:
+                self._start_minigame(door)
+                return
+
+        if self.current_region_name != "city":
+            return
+
         for index, door in enumerate(self._door_objects()[:len(self.DOOR_TARGETS)]):
             if not self._door_collides(door):
                 continue
-            if self.current_region_name == "city":
-                target = self.DOOR_TARGETS[index]
-                if target is None:
-                    return
-                self.current_region_name = target
-                self.player.x, self.player.y = self.region.entry_position("south")
-            else:
-                self._return_to_city()
+            target = self.DOOR_TARGETS[index]
+            if target is None:
+                return
+            self.current_region_name = target
+            self.player.x, self.player.y = self.region.entry_position("south")
             self._update_camera_bounds()
             return
 

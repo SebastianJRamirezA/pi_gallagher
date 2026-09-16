@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="7">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="16">
+ <editorsettings>
+  <export target="nightclub.json" format="json"/>
+ </editorsettings>
  <tileset firstgid="1" source="../graphics/indoor_tileset.tsj"/>
  <tileset firstgid="487" source="../graphics/rpg_tileset.tsj"/>
  <tileset firstgid="2254" source="../graphics/city_tileset.tsj"/>
@@ -76,6 +79,8 @@
 </data>
  </layer>
  <objectgroup id="5" name="Doors">
-  <object id="5" x="209.136" y="266.302" width="30.5359" height="11.3622"/>
+  <object id="5" name="exit" x="209.136" y="266.302" width="30.5359" height="11.3622"/>
+  <object id="7" name="stealth" x="385.96" y="1.42028" width="91.6078" height="45.4488"/>
+  <object id="13" name="safecracker" x="98.3541" y="32.6663" width="27.3403" height="21.6592"/>
  </objectgroup>
 </map>

@@ -134,7 +134,7 @@
                 {
                  "height":14.9129,
                  "id":1,
-                 "name":"",
+                 "name":"exit",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
@@ -150,7 +150,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":2,
+ "nextobjectid":6,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2-2-geb83ddb9",

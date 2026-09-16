@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="2">
+<map version="1.10" tiledversion="1.12.2-2-geb83ddb9" orientation="orthogonal" renderorder="right-down" width="30" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="4">
  <editorsettings>
   <export target="policestation.json" format="json"/>
  </editorsettings>
@@ -79,6 +79,7 @@
  </layer>
  <objectgroup id="5" name="Doors">
   <object id="1" name="exit" x="218.818" y="266.905" width="41.005" height="12.6743"/>
+  <object id="3" name="archive" x="363.081" y="75.3001" width="59.6436" height="25.3485"/>
  </objectgroup>
  <layer id="4" name="Decorations2" width="30" height="20">
   <data encoding="csv">

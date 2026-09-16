@@ -78,6 +78,6 @@
 </data>
  </layer>
  <objectgroup id="4" name="Doors">
-  <object id="1" x="295.417" y="308.91"/>
+  <object id="1" name="exit" x="295.417" y="308.91"/>
  </objectgroup>
 </map>
