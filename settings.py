@@ -19,6 +19,7 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "rotate_righ
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "confirm")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "confirm")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "down")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "right")
