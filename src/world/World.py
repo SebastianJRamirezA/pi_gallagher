@@ -29,6 +29,23 @@ from src.world.Trigger import Trigger
 class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
+    MINIGAME_STATES = {
+        "stealth": StealthMinigameState,
+        "archive": PoliceArchiveState,
+        "safecracker": SafeCrackerState,
+    }
+
+    def _minigame_for_door(self, door):
+        name = str(getattr(door, "name", "") or "").strip().lower()
+        return self.MINIGAME_STATES.get(name)
+
+    @staticmethod
+    def _door_is_active(door) -> bool:
+        return bool(getattr(door, "active", True))
+
+    @staticmethod
+    def _set_door_active(door, active: bool) -> None:
+        setattr(door, "active", bool(active))
 
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
@@ -236,13 +253,16 @@ class World:
     def _try_enter_club_door(self, door_type: str) -> None:
         can_access, reason = self.story.can_access_minigame(door_type)
         if not can_access:
+            self.player.y += 14
             self._monologue(reason)
             return
 
         self._clear_movement()
         if door_type == "stealth":
+            self.player.y = max(self.player.y, 52)
             self.stack.push(StealthMinigameState(self.stack))
         elif door_type == "safecracker":
+            self.player.y = max(self.player.y, 58)
             self.stack.push(SafeCrackerState(self.stack))
 
     def _monologue(self, text: str) -> None:
@@ -341,8 +361,8 @@ class World:
             (14, 14), (-14, 14), (14, -14), (-14, -14),
         ):
             x = door_center.x + offset_x - 1
-            y = door_center.y + offset_y + 2
-            player_rect = pygame.Rect(round(x + 1), round(y - 2), 14, 18)
+            y = door_center.y + offset_y - 12
+            player_rect = pygame.Rect(round(x + 1), round(y + 12), 16, 16)
             if (
                 self.regions["city"].is_walkable(player_rect)
                 and not self._door_collides_rect(player_rect, city_door)
@@ -351,7 +371,7 @@ class World:
                 self.player.x, self.player.y = x, y
                 return
         self.current_region_name = "city"
-        self.player.x, self.player.y = door_center.x, door_center.y + 20
+        self.player.x, self.player.y = door_center.x - 1, door_center.y + 20 - 12
 
     @staticmethod
     def _door_collides_rect(player_rect: pygame.Rect, door) -> bool:

@@ -15,7 +15,7 @@ Each row: frame 0 = idle/neutral, frames 1-2 = walk cycle steps.
 from typing import Any, Dict
 
 GALLAGHER_DEFS: Dict[str, Any] = {
-    "walk_speed": 92,
+    "walk_speed": 150,
     "animations": {
         # Idle — single frame per direction
         "idle-down": {"frames": [0], "texture": "gallagher"},

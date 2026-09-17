@@ -56,11 +56,17 @@ class Actor:
 
     @property
     def rect(self) -> pygame.Rect:
-        return pygame.Rect(round(self.x + 1), round(self.y - 2), self.width, self.height)
+        # 16x16 box anchored at the feet (y + 12) and horizontally centered (x + 1)
+        return pygame.Rect(round(self.x + 1), round(self.y + 12), 16, 16)
+
+    @rect.setter
+    def rect(self, value: pygame.Rect) -> None:
+        self.x = value.x - 1
+        self.y = value.y - 12
 
     def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         frame = settings.FRAMES[self.texture][DIRECTIONS[self.direction]]
-        position = pygame.Rect(round(self.x), round(self.y), self.width, self.height)
+        position = pygame.Rect(round(self.x), round(self.y), 19, 28)
         if camera is not None:
             position = camera.apply(position)
         surface.blit(settings.TEXTURES[self.texture], position, frame)
