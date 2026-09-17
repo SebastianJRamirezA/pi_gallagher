@@ -1,326 +1,992 @@
 """
 P.I. Gallagher: The Missing Art
 
-CorkboardState — The central investigative corkboard in Gallagher's office.
-Pins clue cards with thumbtacks, connects keywords with red thread (hilo rojo),
-validates deductions via StoryManager, and unlocks progressive story chapters.
+CorkboardState — Central investigative corkboard built entirely on gale.ui.
+Features 2D grid navigation across clue cards, seamless focus transition to bottom
+action buttons, mouse click and motion support, a dedicated full-screen Card Details
+overlay, and modal dialogs for deductions and Lauren's hints.
 """
 
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pygame
 
-from gale.input_handler import InputData
+from gale.input_handler import InputData, KeyboardData, MouseClickData, MouseMotionData
 from gale.state import BaseState
 from gale.text import render_text
+from gale.ui import Button, Container, Label, Panel, TextBox, Theme, UIManager, Window
+from gale.ui.widget import Direction, Widget
 
 import settings
-from src.data.cards import CARDS, DEDUCTIONS, LAUREN_HINTS, OPEN_QUESTIONS
+from src.data.cards import LAUREN_HINTS, OPEN_QUESTIONS
 from src.story.StoryManager import StoryManager
+from src.ui.theme import (
+    COLOR_ACCENT_RED,
+    COLOR_BRASS,
+    COLOR_BRASS_LIGHT,
+    COLOR_INK,
+    COLOR_MUTED,
+    COLOR_PAPER,
+    COLOR_PAPER_SELECTED,
+    COLOR_PAPER_THREADED,
+    COLOR_SUCCESS,
+    NOIR_BUTTON_THEME,
+    NOIR_CARD_THEME,
+    NOIR_CORK_THEME,
+    NOIR_DIALOGUE_THEME,
+    NOIR_SIDEBAR_THEME,
+)
+
+
+class CardButton(Button):
+    """
+    gale.ui.Button representing an individual clue card on the corkboard.
+    Displays ID, Title, primary keywords, pin indicator, and clear focus styling.
+    """
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        card_data: Dict[str, Any],
+        on_toggle: Callable[[], None],
+        theme: Optional[Theme] = None,
+    ) -> None:
+        super().__init__(x, y, width, height, text="", on_click=on_toggle, theme=theme)
+        self.card_data = card_data
+        self.is_threaded: bool = False
+
+    @property
+    def pin_pos(self) -> Tuple[int, int]:
+        return int(self.x + self.width // 2), int(self.y + 3)
+
+    def render(self, surface: pygame.Surface) -> None:
+        if not self.visible:
+            return
+
+        # Background color
+        if self.is_threaded:
+            bg_color = COLOR_PAPER_THREADED
+        elif self.focused or self.hovered:
+            bg_color = COLOR_PAPER_SELECTED
+        else:
+            bg_color = COLOR_PAPER
+
+        pygame.draw.rect(surface, bg_color, self.rect, border_radius=3)
+
+        # Border outline: strong visual distinction for focused card
+        if self.focused:
+            pygame.draw.rect(surface, COLOR_BRASS_LIGHT, self.rect, 2, border_radius=3)
+        elif self.is_threaded:
+            pygame.draw.rect(surface, COLOR_ACCENT_RED, self.rect, 2, border_radius=3)
+        elif self.hovered:
+            pygame.draw.rect(surface, COLOR_BRASS, self.rect, 1, border_radius=3)
+        else:
+            pygame.draw.rect(surface, pygame.Color(140, 130, 115), self.rect, 1, border_radius=3)
+
+        # Thumbtack pin at top center
+        px, py = self.pin_pos
+        pin_color = COLOR_ACCENT_RED if self.is_threaded else pygame.Color(230, 175, 45)
+        pygame.draw.circle(surface, pin_color, (px, py), 3)
+        if self.is_threaded:
+            pygame.draw.circle(surface, pygame.Color(255, 140, 140), (px, py), 1)
+
+        # Card Title with cursor indicator when focused
+        cid = self.card_data["id"]
+        title = self.card_data["titulo"]
+        title_prefix = "> " if self.focused else ""
+        render_text(
+            surface,
+            f"{title_prefix}[{cid}] {title}",
+            settings.FONTS["small"],
+            self.x + 4,
+            self.y + 6,
+            COLOR_INK,
+        )
+
+        # Highlighted Keywords
+        kw_list = self.card_data.get("claves", [])
+        kw_str = kw_list[0] if kw_list else ""
+        if len(kw_list) > 1:
+            kw_str += f", {kw_list[1]}"
+
+        render_text(
+            surface,
+            kw_str,
+            settings.FONTS["small"],
+            self.x + 4,
+            self.y + 20,
+            COLOR_ACCENT_RED,
+        )
+
+        # Right-aligned details badge
+        render_text(
+            surface,
+            "[D: Ver]",
+            settings.FONTS["small"],
+            self.rect.right - 44,
+            self.y + 20,
+            COLOR_MUTED,
+        )
+
+
+class CardGridContainer(Container):
+    """
+    gale.ui.Container organizing CardButtons in a 2-column grid.
+    Supports clean 4-way arrow navigation and yields focus downwards on the bottom row.
+    """
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        cols: int = 2,
+        **kwargs,
+    ) -> None:
+        super().__init__(x, y, width, height, **kwargs)
+        self.cols = cols
+        self.last_focused_index: int = 0
+
+    def get_focused_card_button(self) -> Optional[CardButton]:
+        for child in self.children:
+            if isinstance(child, CardButton) and child.focused:
+                return child
+        if self.children and isinstance(self.children[0], CardButton):
+            idx = max(0, min(self.last_focused_index, len(self.children) - 1))
+            return self.children[idx]  # type: ignore[return-value]
+        return None
+
+    def focus_saved_or_first(self) -> None:
+        focusable = self._focusable_children()
+        if not focusable:
+            return
+        idx = max(0, min(self.last_focused_index, len(focusable) - 1))
+        self._focus_only(focusable[idx])
+
+    def _move_focus(self, direction: Direction) -> bool:
+        focusable = self._focusable_children()
+        if not focusable:
+            return False
+
+        dx, dy = direction
+        current = self._focused_child()
+        current_index = focusable.index(current) if current in focusable else self.last_focused_index
+        total = len(focusable)
+
+        row = current_index // self.cols
+        col = current_index % self.cols
+
+        if dx != 0:
+            next_col = col + dx
+            next_idx = row * self.cols + next_col
+            if 0 <= next_col < self.cols and 0 <= next_idx < total:
+                self.last_focused_index = next_idx
+                self._focus_only(focusable[next_idx])
+                return True
+            return False
+        elif dy != 0:
+            next_row = row + dy
+            next_idx = next_row * self.cols + col
+            if 0 <= next_idx < total:
+                self.last_focused_index = next_idx
+                self._focus_only(focusable[next_idx])
+                return True
+            # When moving down past the bottom row, return False to let parent transfer focus to action bar
+            return False
+
+        return False
+
+
+class ActionBarContainer(Container):
+    """
+    gale.ui.Container organizing action buttons horizontally.
+    Supports left/right wrapping and yields focus upwards on UP arrow.
+    """
+
+    def __init__(self, x: float, y: float, width: float, height: float, **kwargs) -> None:
+        super().__init__(x, y, width, height, **kwargs)
+
+    def _move_focus(self, direction: Direction) -> bool:
+        focusable = self._focusable_children()
+        if not focusable:
+            return False
+
+        dx, dy = direction
+        if dy < 0:
+            # Pressing UP yields focus back to the card grid
+            return False
+
+        if dx != 0:
+            current = self._focused_child()
+            current_index = focusable.index(current) if current in focusable else 0
+            next_index = (current_index + dx) % len(focusable)
+            self._focus_only(focusable[next_index])
+            return True
+
+        return False
+
+
+class CorkboardMainContainer(Container):
+    """
+    Top-level UI Container coordinating the CardGridContainer and ActionBarContainer.
+    Dispatches 2D arrow navigation seamlessly between the grid and bottom buttons.
+    """
+
+    def __init__(
+        self,
+        card_grid: CardGridContainer,
+        action_bar: ActionBarContainer,
+        **kwargs,
+    ) -> None:
+        super().__init__(0, 0, settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT, **kwargs)
+        self.card_grid = card_grid
+        self.action_bar = action_bar
+
+    def on_navigate(self, direction: Direction) -> bool:
+        _, dy = direction
+
+        if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
+            if self.action_bar.on_navigate(direction):
+                return True
+            if dy < 0:
+                # UP from action bar returns focus to card grid
+                self.action_bar.focused = False
+                for b in self.action_bar.children:
+                    b.focused = False
+                self._focus_only(self.card_grid)
+                self.card_grid.focus_saved_or_first()
+                return True
+            return False
+
+        # Card grid navigation
+        if self.card_grid.on_navigate(direction):
+            return True
+
+        if dy > 0:
+            # DOWN from bottom of card grid moves into action bar
+            self.card_grid.focused = False
+            for c in self.card_grid.children:
+                c.focused = False
+            self._focus_only(self.action_bar)
+            self.action_bar._focus_first()
+            return True
+
+        return False
+
+    def on_confirm(self) -> bool:
+        if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
+            return self.action_bar.on_confirm()
+        return self.card_grid.on_confirm()
+
+    def on_mouse_click(self, position: Tuple[float, float], data: MouseClickData) -> bool:
+        if not self.enabled or not self.contains(position):
+            return False
+
+        for child in reversed(self.children):
+            if not child.visible or not child.enabled:
+                continue
+
+            if child.on_mouse_click(position, data):
+                if child is self.action_bar:
+                    self.card_grid.focused = False
+                    for c in self.card_grid.children:
+                        c.focused = False
+                    self._focus_only(self.action_bar)
+                elif child is self.card_grid:
+                    self.action_bar.focused = False
+                    for b in self.action_bar.children:
+                        b.focused = False
+                    self._focus_only(self.card_grid)
+                return True
+
+        return False
+
+
+class ModalOverlay(Container):
+    """
+    Full-screen modal container that isolates modal windows (details & dialogue).
+    Absorbs all mouse clicks and routes navigation exclusively to the modal.
+    """
+
+    def __init__(
+        self,
+        width: float,
+        height: float,
+        window: Window,
+        on_dismiss: Optional[Callable[[], None]] = None,
+    ) -> None:
+        super().__init__(0, 0, width, height)
+        self.window = window
+        self.on_dismiss = on_dismiss
+        self.add_child(window)
+        if window._focusable_children():
+            window._focus_first()
+        self.focused = True
+
+    def on_mouse_click(self, position: Tuple[float, float], data: MouseClickData) -> bool:
+        if self.window.contains(position):
+            return self.window.on_mouse_click(position, data)
+
+        # Clicking the backdrop outside the window closes the modal on release
+        if data.released and self.on_dismiss is not None:
+            self.on_dismiss()
+        return True
+
+    def on_mouse_motion(self, position: Tuple[float, float]) -> None:
+        self.window.on_mouse_motion(position)
+
+    def on_navigate(self, direction: Direction) -> bool:
+        return self.window.on_navigate(direction)
+
+    def on_confirm(self) -> bool:
+        return self.window.on_confirm()
+
+    def render(self, surface: pygame.Surface) -> None:
+        if not self.visible:
+            return
+
+        overlay = pygame.Surface((int(self.width), int(self.height)), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))
+        surface.blit(overlay, (0, 0))
+        self.window.render(surface)
 
 
 class CorkboardState(BaseState):
-    # Noir Corkboard Color Palette
-    COLOR_FRAME = (55, 35, 22)
-    COLOR_CORK = (148, 112, 78)
-    COLOR_CORK_DARK = (128, 95, 64)
-    COLOR_PANEL_BG = (35, 30, 26)
-    COLOR_PAPER = (235, 224, 200)
-    COLOR_PAPER_SELECTED = (255, 248, 225)
-    COLOR_PAPER_THREADED = (245, 215, 215)
-    COLOR_INK = (30, 25, 22)
-    COLOR_KEYWORD = (165, 45, 30)
-    COLOR_THREAD = (210, 30, 30)
-    COLOR_PIN = (220, 40, 40)
-    COLOR_PIN_HEAD = (245, 180, 50)
-    COLOR_BRASS = (185, 145, 65)
-    COLOR_MUTED = (120, 110, 100)
-    COLOR_SUCCESS = (60, 130, 60)
-    COLOR_DANGER = (180, 50, 40)
-
     def enter(self) -> None:
         self.story = StoryManager.get_instance()
         self.visit = self.story.get_current_corcho_visit()
 
-        # Retrieve available cards based on player's inventory
+        self.threaded_ids: List[str] = []
+
+        # Modal / details screen state
+        self.modal_overlay: Optional[ModalOverlay] = None
+        self.modal_active: bool = False
+        self.details_active: bool = False
+        self.details_card: Optional[Dict[str, Any]] = None
+        self.details_thread_btn: Optional[Button] = None
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        """Construct the entire corkboard interface using gale.ui widgets."""
         self.cards = self.story.get_available_cards_for_corkboard()
-        # Sort cards deterministically (C01, C02, etc.)
         self.cards.sort(key=lambda c: c["id"])
 
-        self.selected_index = 0
-        self.threaded_ids: List[str] = []  # IDs of cards pinned with the red thread
+        # 1. Card Grid Container (2 columns of cards)
+        self.card_buttons: List[CardButton] = []
+        grid_x = 12
+        grid_y = 34
+        card_w = 152
+        card_h = 36
+        gap_x = 8
+        gap_y = 4
+        cols = 2
 
-        # Feedback message and timer
-        self.feedback_msg: str = ""
-        self.feedback_timer: float = 0.0
-        self.feedback_is_success: bool = False
+        self.card_grid = CardGridContainer(
+            grid_x, grid_y, (card_w + gap_x) * cols, (card_h + gap_y) * 4, cols=cols
+        )
 
-        # Grid layout for cards on the board
-        # Board area: left=10, top=32, width=335, height=195
-        self.COLS = 3
-        self.CARD_W = 104
-        self.CARD_H = 44
-        self.CARD_GAP_X = 8
-        self.CARD_GAP_Y = 6
-        self.BOARD_X = 14
-        self.BOARD_Y = 36
-
-        # Scroll offset if there are more cards than fit on screen
-        self.scroll_row = 0
-
-    def _get_card_pos(self, index: int) -> Tuple[int, int]:
-        row = (index // self.COLS) - self.scroll_row
-        col = index % self.COLS
-        x = self.BOARD_X + col * (self.CARD_W + self.CARD_GAP_X)
-        y = self.BOARD_Y + row * (self.CARD_H + self.CARD_GAP_Y)
-        return x, y
-
-    def _get_pin_pos(self, card_id: str) -> Optional[Tuple[int, int]]:
         for i, card in enumerate(self.cards):
-            if card["id"] == card_id:
-                x, y = self._get_card_pos(i)
-                return x + self.CARD_W // 2, y + 4
+            row = i // cols
+            col = i % cols
+            cx = grid_x + col * (card_w + gap_x)
+            cy = grid_y + row * (card_h + gap_y)
+
+            cid = card["id"]
+
+            def make_toggle(card_id: str):
+                return lambda: self._toggle_thread(card_id)
+
+            btn = CardButton(
+                cx,
+                cy,
+                card_w,
+                card_h,
+                card_data=card,
+                on_toggle=make_toggle(cid),
+                theme=NOIR_CARD_THEME,
+            )
+            btn.is_threaded = cid in self.threaded_ids
+            self.card_buttons.append(btn)
+            self.card_grid.add_child(btn)
+
+        # 2. Bottom Action Bar Container with 5 buttons
+        bar_x = 12
+        bar_y = 200
+        bar_w = 456
+        bar_h = 58
+        btn_y = bar_y + 6
+        btn_h = 22
+
+        self.action_bar = ActionBarContainer(bar_x, btn_y, bar_w, btn_h)
+
+        self.btn_details = Button(
+            18,
+            btn_y,
+            96,
+            btn_h,
+            "Detalles [D]",
+            on_click=self._open_focused_card_details,
+            theme=NOIR_BUTTON_THEME,
+        )
+        self.btn_thread = Button(
+            118,
+            btn_y,
+            92,
+            btn_h,
+            "Hilo [ESPACIO]",
+            on_click=self._toggle_focused_card_thread,
+            theme=NOIR_BUTTON_THEME,
+        )
+        self.btn_deduce = Button(
+            214,
+            btn_y,
+            88,
+            btn_h,
+            "Deducir [ENTER]",
+            on_click=self._attempt_deduction,
+            theme=NOIR_BUTTON_THEME,
+        )
+        self.btn_hint = Button(
+            306,
+            btn_y,
+            80,
+            btn_h,
+            "Ayuda [H]",
+            on_click=self._show_hint,
+            theme=NOIR_BUTTON_THEME,
+        )
+        self.btn_exit = Button(
+            390,
+            btn_y,
+            72,
+            btn_h,
+            "Salir [ESC]",
+            on_click=self._exit_board,
+            theme=NOIR_BUTTON_THEME,
+        )
+
+        self.action_bar.add_child(self.btn_details)
+        self.action_bar.add_child(self.btn_thread)
+        self.action_bar.add_child(self.btn_deduce)
+        self.action_bar.add_child(self.btn_hint)
+        self.action_bar.add_child(self.btn_exit)
+
+        # 3. Root Main Container coordinating Grid and Action Bar
+        self.root = CorkboardMainContainer(self.card_grid, self.action_bar)
+
+        # Main Corkboard Background Panel
+        self.board_panel = Panel(
+            6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12, theme=NOIR_CORK_THEME
+        )
+        self.root.add_child(self.board_panel)
+
+        # Header Bar
+        header_text = f"PIZARRA DE INVESTIGACIÓN — VISITA {self.visit}"
+        self.header_label = Label(
+            16,
+            10,
+            header_text,
+            font=settings.FONTS["medium"],
+            color=pygame.Color(45, 30, 18),
+            theme=NOIR_CORK_THEME,
+        )
+        self.root.add_child(self.header_label)
+
+        counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
+        self.counter_label = Label(
+            344,
+            12,
+            counter_text,
+            font=settings.FONTS["small"],
+            color=pygame.Color(65, 45, 28),
+            theme=NOIR_CORK_THEME,
+        )
+        self.root.add_child(self.counter_label)
+
+        # Add Card Grid
+        self.root.add_child(self.card_grid)
+
+        # Sidebar: Open Questions Window (Dudas Abiertas)
+        sidebar_x = 328
+        sidebar_y = 34
+        sidebar_w = 140
+        sidebar_h = 156
+
+        self.sidebar_win = Window(
+            sidebar_x,
+            sidebar_y,
+            sidebar_w,
+            sidebar_h,
+            title="DUDAS",
+            closable=False,
+            theme=NOIR_SIDEBAR_THEME,
+        )
+
+        questions = OPEN_QUESTIONS.get(self.visit, [])
+        q_text = "\n\n".join(f"• {q}" for q in questions)
+        theme_q = Theme(
+            font=settings.FONTS["small"],
+            text_color=pygame.Color(220, 210, 195),
+            background_color=NOIR_SIDEBAR_THEME.background_color,
+            border_color=NOIR_SIDEBAR_THEME.background_color,
+            border_width=0,
+            padding=2,
+        )
+        self.sidebar_tb = TextBox(
+            sidebar_x + 6,
+            sidebar_y + 24,
+            sidebar_w - 12,
+            sidebar_h - 30,
+            text=q_text,
+            lines_per_page=8,
+            theme=theme_q,
+        )
+        self.sidebar_win.add_child(self.sidebar_tb)
+        self.root.add_child(self.sidebar_win)
+
+        # Bottom Panel and Action Bar
+        self.action_panel = Panel(bar_x, bar_y, bar_w, bar_h, theme=NOIR_SIDEBAR_THEME)
+        self.root.add_child(self.action_panel)
+        self.root.add_child(self.action_bar)
+
+        # Help hint line under the buttons
+        self.bar_hint_label = Label(
+            20,
+            bar_y + 34,
+            "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  Clic: Seleccionar",
+            font=settings.FONTS["small"],
+            color=COLOR_MUTED,
+            theme=NOIR_SIDEBAR_THEME,
+        )
+        self.root.add_child(self.bar_hint_label)
+
+        # Initial focus on first card
+        if self.card_buttons:
+            self.root._focus_only(self.card_grid)
+            self.card_grid.focus_saved_or_first()
+
+        # Gale UIManager
+        self.ui = UIManager(
+            self.root,
+            virtual_width=settings.VIRTUAL_WIDTH,
+            window_width=settings.WINDOW_WIDTH,
+            virtual_height=settings.VIRTUAL_HEIGHT,
+            window_height=settings.WINDOW_HEIGHT,
+            confirm_action="interact",
+            navigate_actions={
+                "move_up": (0, -1),
+                "move_down": (0, 1),
+                "move_left": (-1, 0),
+                "move_right": (1, 0),
+            },
+        )
+
+    def _get_focused_card(self) -> Optional[Dict[str, Any]]:
+        """Return the card data of currently focused or hovered CardButton."""
+        btn = self.card_grid.get_focused_card_button()
+        if btn is not None:
+            return btn.card_data
+        if self.card_buttons:
+            return self.card_buttons[0].card_data
         return None
 
-    def on_input(self, input_id: str, input_data: InputData) -> None:
-        if not input_data.pressed:
-            return
+    def _open_focused_card_details(self) -> None:
+        """Open the Card Details Screen for the currently focused card."""
+        card = self._get_focused_card()
+        if card is not None:
+            self._show_card_details(card)
 
-        total_cards = len(self.cards)
-        if total_cards == 0:
-            if input_id in ("quit", "interact", "enter"):
-                self.state_machine.pop()
-            return
+    def _toggle_focused_card_thread(self) -> None:
+        """Toggle thread connection for the currently focused card."""
+        card = self._get_focused_card()
+        if card is not None:
+            self._toggle_thread(card["id"])
 
-        row = self.selected_index // self.COLS
-        col = self.selected_index % self.COLS
+    # ── Pantalla de Detalles de Tarjeta (Card Details Screen) ────────────────
 
-        if input_id == "quit":
-            self.state_machine.pop()
-            return
+    def _show_card_details(self, card: Dict[str, Any]) -> None:
+        """
+        Display the full, unclipped Card Details Screen wrapped in a ModalOverlay.
+        Shows ID, Title, Type, Origin, Keywords, and full narrative Description.
+        """
+        if self.modal_active:
+            self._close_modal()
 
-        elif input_id == "move_left" and col > 0:
-            self.selected_index -= 1
-        elif input_id == "move_right" and col < self.COLS - 1 and self.selected_index + 1 < total_cards:
-            self.selected_index += 1
-        elif input_id == "move_up" and row > 0:
-            self.selected_index -= self.COLS
-            if self.selected_index // self.COLS < self.scroll_row:
-                self.scroll_row = max(0, self.scroll_row - 1)
-        elif input_id == "move_down":
-            next_idx = self.selected_index + self.COLS
-            if next_idx < total_cards:
-                self.selected_index = next_idx
-                visible_rows = 4
-                if self.selected_index // self.COLS >= self.scroll_row + visible_rows:
-                    self.scroll_row += 1
+        self.details_card = card
+        win_w = 390
+        win_h = 210
+        win_x = (settings.VIRTUAL_WIDTH - win_w) // 2
+        win_y = (settings.VIRTUAL_HEIGHT - win_h) // 2
 
-        elif input_id in ("interact", "confirm"):
-            # Pin / unpin selected card to red thread
-            card = self.cards[self.selected_index]
-            cid = card["id"]
-            if cid in self.threaded_ids:
-                self.threaded_ids.remove(cid)
-            else:
-                self.threaded_ids.append(cid)
+        cid = card["id"]
+        title_str = f"EXPEDIENTE [{cid}]: {card['titulo']}"
 
-        elif input_id == "enter":
-            # Enter validates current thread
-            self._attempt_deduction()
+        details_window = Window(
+            win_x,
+            win_y,
+            win_w,
+            win_h,
+            title=title_str,
+            closable=True,
+            on_close=self._close_details,
+            theme=NOIR_DIALOGUE_THEME,
+        )
 
-        elif input_id in ("rotate_left", "rotate_right", "fine"):
-            # Hotkey for Lauren's hint
-            hint = LAUREN_HINTS.get(self.visit, "Lauren no tiene más pistas por ahora.")
-            self.feedback_msg = hint
-            self.feedback_timer = 6.0
-            self.feedback_is_success = False
+        # Row 1: Tipo & Origen
+        meta_str = f"TIPO: {card['tipo'].upper()}   |   ORIGEN: {card.get('origen', 'Investigación')}"
+        meta_lbl = Label(
+            win_x + 12,
+            win_y + 24,
+            meta_str,
+            font=settings.FONTS["small"],
+            color=COLOR_BRASS_LIGHT,
+            theme=NOIR_DIALOGUE_THEME,
+        )
+        details_window.add_child(meta_lbl)
 
-    def update(self, dt: float) -> None:
-        if self.feedback_timer > 0:
-            self.feedback_timer -= dt
-            if self.feedback_timer <= 0:
-                self.feedback_msg = ""
+        # Row 2: Palabras Clave
+        kw_str = f"PALABRAS CLAVE: {', '.join(card['claves'])}"
+        kw_lbl = Label(
+            win_x + 12,
+            win_y + 40,
+            kw_str,
+            font=settings.FONTS["small"],
+            color=COLOR_ACCENT_RED,
+            theme=NOIR_DIALOGUE_THEME,
+        )
+        details_window.add_child(kw_lbl)
+
+        # Row 3: Full Description (Word-wrapped TextBox inside Panel)
+        desc_theme = Theme(
+            font=settings.FONTS["small"],
+            text_color=pygame.Color(235, 228, 215),
+            background_color=NOIR_SIDEBAR_THEME.background_color,
+            border_color=NOIR_SIDEBAR_THEME.background_color,
+            border_width=0,
+            padding=4,
+        )
+        desc_panel = Panel(
+            win_x + 10, win_y + 56, win_w - 20, 96, theme=NOIR_SIDEBAR_THEME
+        )
+        details_window.add_child(desc_panel)
+
+        desc_tb = TextBox(
+            win_x + 14,
+            win_y + 60,
+            win_w - 28,
+            88,
+            text=card["descripcion"],
+            lines_per_page=6,
+            theme=desc_theme,
+        )
+        details_window.add_child(desc_tb)
+
+        # Row 4: Action Buttons inside details screen
+        is_threaded = cid in self.threaded_ids
+        btn_thread_text = (
+            "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
+        )
+
+        def on_details_thread_toggle():
+            self._toggle_thread(cid)
+            self._update_details_thread_button()
+
+        self.details_thread_btn = Button(
+            win_x + 10,
+            win_y + 168,
+            190,
+            24,
+            btn_thread_text,
+            on_click=on_details_thread_toggle,
+            theme=NOIR_BUTTON_THEME,
+        )
+        btn_close = Button(
+            win_x + win_w - 115,
+            win_y + 168,
+            105,
+            24,
+            "Cerrar [D / ESC]",
+            on_click=self._close_details,
+            theme=NOIR_BUTTON_THEME,
+        )
+
+        details_window.add_child(self.details_thread_btn)
+        details_window.add_child(btn_close)
+
+        # Wrap in ModalOverlay for full input isolation
+        self.modal_overlay = ModalOverlay(
+            settings.VIRTUAL_WIDTH,
+            settings.VIRTUAL_HEIGHT,
+            details_window,
+            on_dismiss=self._close_details,
+        )
+        self.details_active = True
+
+    def _update_details_thread_button(self) -> None:
+        if self.details_card and self.details_thread_btn:
+            cid = self.details_card["id"]
+            is_threaded = cid in self.threaded_ids
+            self.details_thread_btn.text = (
+                "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
+            )
+
+    def _close_details(self) -> None:
+        """Close the Card Details Screen and restore focus to the card grid."""
+        if self.details_active:
+            self.modal_overlay = None
+            self.details_card = None
+            self.details_thread_btn = None
+            self.details_active = False
+
+            # Restore focus to card grid
+            self.root._focus_only(self.card_grid)
+            self.card_grid.focus_saved_or_first()
+
+    # ── Modal de Deducciones y Consejos ──────────────────────────────────────
+
+    def _show_modal(self, title: str, text: str, is_success: bool = False) -> None:
+        """Display a full narrative message in an isolated modal dialog."""
+        if self.details_active:
+            self._close_details()
+
+        modal_w = 380
+        modal_h = 150
+        modal_x = (settings.VIRTUAL_WIDTH - modal_w) // 2
+        modal_y = (settings.VIRTUAL_HEIGHT - modal_h) // 2
+
+        modal_window = Window(
+            modal_x,
+            modal_y,
+            modal_w,
+            modal_h,
+            title=title,
+            closable=True,
+            on_close=self._close_modal,
+            theme=NOIR_DIALOGUE_THEME,
+        )
+
+        theme_text = Theme(
+            font=settings.FONTS["small"],
+            text_color=COLOR_SUCCESS if is_success else pygame.Color(235, 228, 215),
+            background_color=NOIR_DIALOGUE_THEME.background_color,
+            border_color=NOIR_DIALOGUE_THEME.background_color,
+            border_width=0,
+            padding=2,
+        )
+
+        modal_textbox = TextBox(
+            modal_x + 10,
+            modal_y + 24,
+            modal_w - 20,
+            88,
+            text=text,
+            lines_per_page=6,
+            on_close=self._close_modal,
+            theme=theme_text,
+        )
+        modal_window.add_child(modal_textbox)
+
+        btn_dismiss = Button(
+            modal_x + modal_w // 2 - 50,
+            modal_y + modal_h - 30,
+            100,
+            22,
+            "Aceptar [ENTER]",
+            on_click=self._close_modal,
+            theme=NOIR_BUTTON_THEME,
+        )
+        modal_window.add_child(btn_dismiss)
+
+        # Wrap in ModalOverlay for full input isolation
+        self.modal_overlay = ModalOverlay(
+            settings.VIRTUAL_WIDTH,
+            settings.VIRTUAL_HEIGHT,
+            modal_window,
+            on_dismiss=self._close_modal,
+        )
+        self.modal_active = True
+
+    def _close_modal(self) -> None:
+        if self.modal_active:
+            self.modal_overlay = None
+            self.modal_active = False
+
+            # Restore focus to card grid
+            self.root._focus_only(self.card_grid)
+            self.card_grid.focus_saved_or_first()
+
+    # ── Mecánica de Hilo Rojo y Deducciones ──────────────────────────────────
+
+    def _toggle_thread(self, card_id: str) -> None:
+        """Toggle whether a card is pinned to the red thread."""
+        if card_id in self.threaded_ids:
+            self.threaded_ids.remove(card_id)
+        else:
+            self.threaded_ids.append(card_id)
+
+        # Sync visual state on card buttons
+        for btn in self.card_buttons:
+            btn.is_threaded = btn.card_data["id"] in self.threaded_ids
+
+        counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
+        self.counter_label.set_text(counter_text)
 
     def _attempt_deduction(self) -> None:
+        """Validate current red thread connection against deduction rules."""
+        if self.modal_active:
+            self._close_modal()
+            return
+        if self.details_active:
+            self._close_details()
+
         if len(self.threaded_ids) < 2:
-            self.feedback_msg = "Debes clavar el hilo rojo al menos entre dos tarjetas."
-            self.feedback_timer = 3.5
-            self.feedback_is_success = False
+            self._show_modal(
+                "PIZARRA DE CORCHO",
+                "Debes seleccionar al menos dos tarjetas con el hilo rojo para intentar formular una deducción.",
+            )
             return
 
         is_valid, ded, msg = self.story.validate_connection(self.threaded_ids)
-        self.feedback_msg = msg
-        self.feedback_timer = 5.0
-        self.feedback_is_success = is_valid
 
         if is_valid:
-            # Clear current thread so player can form next deduction
             self.threaded_ids.clear()
             self.visit = self.story.get_current_corcho_visit()
-            # Refresh card catalog
-            self.cards = self.story.get_available_cards_for_corkboard()
-            self.cards.sort(key=lambda c: c["id"])
+            self._build_ui()
+            full_msg = (
+                f"{ded['titulo']}\n\n"
+                f"{ded['texto']}\n\n"
+                f"Efecto: {ded['unlock_text']}"
+            )
+            self._show_modal(f"¡DEDUCCIÓN RESUELTA: {ded['id']}!", full_msg, is_success=True)
+        else:
+            full_msg = (
+                f"'{msg}'\n\n"
+                f"Las pistas unidas no forman una relación lógica de causa y efecto. "
+                f"Revisa las palabras clave e inténtalo de nuevo."
+            )
+            self._show_modal("GALLAGHER — MONÓLOGO INTERIOR", full_msg, is_success=False)
+
+    def _show_hint(self) -> None:
+        if self.modal_active:
+            self._close_modal()
+            return
+        if self.details_active:
+            self._close_details()
+
+        hint = LAUREN_HINTS.get(self.visit, "Lauren no tiene más pistas por ahora.")
+        self._show_modal("CONSEJO DE LAUREN", f"Lauren se acerca a la pizarra:\n\n{hint}")
+
+    def _exit_board(self) -> None:
+        if self.modal_active:
+            self._close_modal()
+            return
+        if self.details_active:
+            self._close_details()
+            return
+        self.state_machine.pop()
+
+    def update(self, dt: float) -> None:
+        self.ui.update(dt)
+        if self.modal_overlay is not None:
+            self.modal_overlay.update(dt)
+
+    def on_input(self, input_id: str, input_data: InputData) -> None:
+        # Filter key releases only for KeyboardData so mouse click and motion are preserved
+        if isinstance(input_data, KeyboardData) and not input_data.pressed:
+            return
+
+        # 1. When a modal or card details overlay is active:
+        if self.modal_overlay is not None:
+            if input_id in ("quit", "details") and self.details_active:
+                self._close_details()
+                return
+
+            if input_id in ("quit", "interact", "enter", "confirm") and self.modal_active:
+                self._close_modal()
+                return
+
+            if input_id in ("interact", "confirm") and self.details_active and self.details_card:
+                self._toggle_thread(self.details_card["id"])
+                self._update_details_thread_button()
+                return
+
+            # Forward mouse events to modal overlay
+            if isinstance(input_data, MouseMotionData):
+                self.modal_overlay.on_mouse_motion(self.ui._rescale(input_data.position))
+            elif isinstance(input_data, MouseClickData):
+                self.modal_overlay.on_mouse_click(
+                    self.ui._rescale(input_data.position), input_data
+                )
+            else:
+                if input_id in ("interact", "enter", "confirm"):
+                    self.modal_overlay.on_confirm()
+                elif input_id in self.ui.navigate_actions:
+                    self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
+            return
+
+        # 2. Main corkboard screen shortcuts:
+        if input_id == "quit":
+            self._exit_board()
+            return
+
+        if input_id == "details" or (
+            isinstance(input_data, KeyboardData) and input_data.key in (pygame.K_d, pygame.K_i)
+        ):
+            self._open_focused_card_details()
+            return
+
+        if input_id == "hint" or (
+            isinstance(input_data, KeyboardData) and input_data.key == pygame.K_h
+        ):
+            self._show_hint()
+            return
+
+        # Handle ENTER / confirm:
+        if input_id in ("enter", "confirm"):
+            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
+                self.action_bar.on_confirm()
+                return
+            # On card grid, ENTER attempts deduction
+            self._attempt_deduction()
+            return
+
+        # Handle SPACE / interact:
+        if input_id == "interact":
+            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
+                self.action_bar.on_confirm()
+                return
+            # On card grid, SPACE toggles thread on focused card
+            card_btn = self.card_grid.get_focused_card_button()
+            if card_btn:
+                self._toggle_thread(card_btn.card_data["id"])
+            return
+
+        # Forward navigation, mouse motion, and mouse clicks to UIManager
+        self.ui.on_input(input_id, input_data)
 
     def render(self, surface: pygame.Surface) -> None:
-        # Wooden outer frame
-        surface.fill(self.COLOR_FRAME)
+        # Background outer wood frame
+        surface.fill(pygame.Color(55, 35, 22))
 
-        # Corkboard inner area
-        board_rect = pygame.Rect(6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12)
-        pygame.draw.rect(surface, self.COLOR_CORK, board_rect)
+        # Render main gale.ui widget tree
+        self.ui.render(surface)
 
-        # Subtle cork texture lines
-        for i in range(12, settings.VIRTUAL_HEIGHT - 12, 16):
-            pygame.draw.line(surface, self.COLOR_CORK_DARK, (8, i), (settings.VIRTUAL_WIDTH - 8, i), 1)
-
-        # Top Header Bar
-        render_text(
-            surface,
-            f"PIZARRA DE CORCHO — VISITA {self.visit}",
-            settings.FONTS["medium"],
-            14,
-            10,
-            self.COLOR_FRAME,
-            shadowed=True,
-        )
-
-        counter_text = f"Pistas clavadas: {len(self.cards)}"
-        render_text(
-            surface,
-            counter_text,
-            settings.FONTS["small"],
-            240,
-            12,
-            self.COLOR_FRAME,
-        )
-
-        # Draw red threads connecting selected cards
-        if len(self.threaded_ids) >= 2:
+        # Draw Red Thread (hilo rojo) connecting pinned cards
+        if len(self.threaded_ids) >= 2 and not self.details_active:
             points = []
             for cid in self.threaded_ids:
-                pos = self._get_pin_pos(cid)
-                if pos:
-                    points.append(pos)
+                for btn in self.card_buttons:
+                    if btn.card_data["id"] == cid:
+                        points.append(btn.pin_pos)
+                        break
             if len(points) >= 2:
-                pygame.draw.lines(surface, self.COLOR_THREAD, False, points, 2)
+                pygame.draw.lines(surface, COLOR_ACCENT_RED, False, points, 2)
 
-        # Render cards
-        for i, card in enumerate(self.cards):
-            row = (i // self.COLS) - self.scroll_row
-            if row < 0 or row >= 4:
-                continue
-
-            cx, cy = self._get_card_pos(i)
-            card_rect = pygame.Rect(cx, cy, self.CARD_W, self.CARD_H)
-
-            is_selected = (i == self.selected_index)
-            is_threaded = (card["id"] in self.threaded_ids)
-
-            # Card background
-            if is_threaded:
-                bg = self.COLOR_PAPER_THREADED
-            elif is_selected:
-                bg = self.COLOR_PAPER_SELECTED
-            else:
-                bg = self.COLOR_PAPER
-
-            pygame.draw.rect(surface, bg, card_rect, border_radius=2)
-
-            # Border
-            if is_selected:
-                pygame.draw.rect(surface, self.COLOR_PIN_HEAD, card_rect, 2, border_radius=2)
-            elif is_threaded:
-                pygame.draw.rect(surface, self.COLOR_THREAD, card_rect, 2, border_radius=2)
-            else:
-                pygame.draw.rect(surface, (150, 140, 125), card_rect, 1, border_radius=2)
-
-            # Card thumbtack
-            pin_x = cx + self.CARD_W // 2
-            pin_y = cy + 4
-            pin_color = self.COLOR_PIN if is_threaded else self.COLOR_PIN_HEAD
-            pygame.draw.circle(surface, pin_color, (pin_x, pin_y), 3)
-
-            # Card Title
-            render_text(
-                surface,
-                f"[{card['id']}] {card['titulo']}",
-                settings.FONTS["small"],
-                cx + 4,
-                cy + 8,
-                self.COLOR_INK,
-            )
-
-            # Highlighted Keywords
-            kw_str = ", ".join(card.get("claves", [])[:2])
-            render_text(
-                surface,
-                kw_str,
-                settings.FONTS["small"],
-                cx + 4,
-                cy + 24,
-                self.COLOR_KEYWORD,
-            )
-
-        # Right sidebar: Column of Open Questions ("Preguntas Abiertas")
-        sidebar_x = 358
-        sidebar_w = settings.VIRTUAL_WIDTH - sidebar_x - 12
-        sidebar_rect = pygame.Rect(sidebar_x, 32, sidebar_w, 185)
-        pygame.draw.rect(surface, self.COLOR_PANEL_BG, sidebar_rect, border_radius=3)
-        pygame.draw.rect(surface, self.COLOR_BRASS, sidebar_rect, 1, border_radius=3)
-
-        render_text(
-            surface,
-            "DUDAS ABIERTAS",
-            settings.FONTS["small"],
-            sidebar_rect.centerx,
-            36,
-            self.COLOR_BRASS,
-            center=True,
-        )
-        pygame.draw.line(surface, self.COLOR_BRASS, (sidebar_x + 6, 50), (sidebar_x + sidebar_w - 6, 50), 1)
-
-        questions = OPEN_QUESTIONS.get(self.visit, [])
-        qy = 54
-        for q in questions:
-            words = q.split()
-            line1, line2 = "", ""
-            for w in words:
-                test = line1 + (" " if line1 else "") + w
-                if settings.FONTS["small"].size(test)[0] <= sidebar_w - 12:
-                    line1 = test
-                else:
-                    line2 += (" " if line2 else "") + w
-            render_text(surface, f"• {line1}", settings.FONTS["small"], sidebar_x + 6, qy, (210, 200, 185))
-            qy += 14
-            if line2:
-                render_text(surface, f"  {line2}", settings.FONTS["small"], sidebar_x + 6, qy, (210, 200, 185))
-                qy += 14
-            qy += 4
-
-        # Bottom Feedback / Monologue Bar
-        feedback_y = 222
-        feedback_rect = pygame.Rect(14, feedback_y, settings.VIRTUAL_WIDTH - 28, 22)
-        pygame.draw.rect(surface, (25, 20, 18), feedback_rect, border_radius=2)
-        pygame.draw.rect(surface, (80, 70, 60), feedback_rect, 1, border_radius=2)
-
-        if self.feedback_msg:
-            fb_color = self.COLOR_SUCCESS if self.feedback_is_success else self.COLOR_DANGER
-            render_text(
-                surface,
-                self.feedback_msg,
-                settings.FONTS["small"],
-                feedback_rect.x + 8,
-                feedback_y + 4,
-                fb_color,
-            )
-        else:
-            render_text(
-                surface,
-                "Flechas: Mover   ESPACIO: Clavar hilo   ENTER: Deducir   H: Ayuda Lauren   ESC: Salir",
-                settings.FONTS["small"],
-                feedback_rect.centerx,
-                feedback_y + 4,
-                self.COLOR_MUTED,
-                center=True,
-            )
-
+        # Render active modal / details overlay
+        if self.modal_overlay is not None:
+            self.modal_overlay.render(surface)

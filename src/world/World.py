@@ -13,15 +13,15 @@ from gale.camera import Camera
 from gale.state import StateStack
 from gale.text import render_text
 
+from gale.ui import Label, Panel
 import settings
 from src.data.dialogues import DIALOGUES
-from src.entity.Actor import NPC, Player
+from src.entity import NPC, Player
 from src.states.CorkboardState import CorkboardState
 from src.states.DialogueState import DialogueState
-from src.states.PoliceArchiveState import PoliceArchiveState
-from src.states.SafeCrackerState import SafeCrackerState
-from src.states.StealthMinigameState import StealthMinigameState
+from src.states.minigames import PoliceArchiveState, SafeCrackerState, StealthMinigameState
 from src.story.StoryManager import StoryManager
+from src.ui.theme import NOIR_PROMPT_THEME
 from src.world.Region import Region
 from src.world.Trigger import Trigger
 
@@ -236,13 +236,16 @@ class World:
     def _try_enter_club_door(self, door_type: str) -> None:
         can_access, reason = self.story.can_access_minigame(door_type)
         if not can_access:
+            self.player.y += 14
             self._monologue(reason)
             return
 
         self._clear_movement()
         if door_type == "stealth":
+            self.player.y = max(self.player.y, 52)
             self.stack.push(StealthMinigameState(self.stack))
         elif door_type == "safecracker":
+            self.player.y = max(self.player.y, 58)
             self.stack.push(SafeCrackerState(self.stack))
 
     def _monologue(self, text: str) -> None:
@@ -274,7 +277,7 @@ class World:
     def _move_axis(self, dx: float, dy: float) -> None:
         if not dx and not dy:
             return
-        next_rect = self.player.rect.move(round(dx), round(dy))
+        next_rect = self.player.collision_rect.move(round(dx), round(dy))
         if self.region.is_walkable(next_rect):
             self.player.x += dx
             self.player.y += dy
@@ -283,7 +286,7 @@ class World:
         return self.region.tilemap.object_layers.get("Doors", [])
 
     def _door_collides(self, door) -> bool:
-        player_rect = self.player.rect
+        player_rect = self.player.collision_rect
         if not getattr(door, "width", 0) or not getattr(door, "height", 0):
             return player_rect.collidepoint(round(door.x), round(door.y))
         door_rect = pygame.Rect(
@@ -341,8 +344,8 @@ class World:
             (14, 14), (-14, 14), (14, -14), (-14, -14),
         ):
             x = door_center.x + offset_x - 1
-            y = door_center.y + offset_y + 2
-            player_rect = pygame.Rect(round(x + 1), round(y - 2), 14, 18)
+            y = door_center.y + offset_y - 12
+            player_rect = pygame.Rect(round(x + 1), round(y + 12), 16, 16)
             if (
                 self.regions["city"].is_walkable(player_rect)
                 and not self._door_collides_rect(player_rect, city_door)
@@ -351,7 +354,7 @@ class World:
                 self.player.x, self.player.y = x, y
                 return
         self.current_region_name = "city"
-        self.player.x, self.player.y = door_center.x, door_center.y + 20
+        self.player.x, self.player.y = door_center.x - 1, door_center.y + 20 - 12
 
     @staticmethod
     def _door_collides_rect(player_rect: pygame.Rect, door) -> bool:
@@ -379,10 +382,9 @@ class World:
                 self.active_interactable = trigger
                 return
 
-        # Check NPCs in current region (within 30px)
-        player_center = player_rect.center
+        # Check NPCs in current region (direct rect collision)
         for npc in self.region.npcs:
-            if pygame.Vector2(player_center).distance_to(npc.rect.center) <= 28:
+            if player_rect.colliderect(npc.rect):
                 self.active_prompt = f"[ESPACIO / E] Hablar con {npc.name}"
                 self.active_interactable = npc
                 return
@@ -391,7 +393,7 @@ class World:
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         self.player.on_input(input_id, input_data)
-        if input_id in ("interact", "enter") and input_data.pressed:
+        if input_id in ("interact", "enter") and getattr(input_data, "pressed", False):
             self._try_interact()
 
     def _try_interact(self) -> None:
@@ -530,10 +532,18 @@ class World:
         self.player.render(surface, self.camera)
 
         # Region label in top-left
-        label = settings.FONTS["small"].render(
-            self.current_region_name.upper(), True, (218, 214, 198)
+        reg_text = self.current_region_name.upper()
+        rw, rh = settings.FONTS["small"].size(reg_text)
+        reg_panel = Panel(10, 8, rw + 14, rh + 6, theme=NOIR_PROMPT_THEME)
+        reg_panel.render(surface)
+        reg_label = Label(
+            17,
+            11,
+            reg_text,
+            font=settings.FONTS["small"],
+            theme=NOIR_PROMPT_THEME,
         )
-        surface.blit(label, (12, 10))
+        reg_label.render(surface)
 
         # Floating Interaction Prompt badge
         if self.active_prompt:
@@ -543,18 +553,17 @@ class World:
             badge_x = settings.VIRTUAL_WIDTH // 2 - badge_w // 2
             badge_y = settings.VIRTUAL_HEIGHT - 34
 
-            badge_rect = pygame.Rect(badge_x, badge_y, badge_w, badge_h)
-            pygame.draw.rect(surface, (28, 24, 22), badge_rect, border_radius=3)
-            pygame.draw.rect(surface, (175, 140, 65), badge_rect, 1, border_radius=3)
-            render_text(
-                surface,
+            prompt_panel = Panel(badge_x, badge_y, badge_w, badge_h, theme=NOIR_PROMPT_THEME)
+            prompt_panel.render(surface)
+            prompt_label = Label(
+                settings.VIRTUAL_WIDTH // 2,
+                badge_y + 4,
                 self.active_prompt,
-                settings.FONTS["small"],
-                badge_rect.centerx,
-                badge_rect.y + 4,
-                (235, 225, 205),
+                font=settings.FONTS["small"],
                 center=True,
+                theme=NOIR_PROMPT_THEME,
             )
+            prompt_label.render(surface)
 
         # Floating Notification Banners (at top center)
         if self.story.notifications:
@@ -565,15 +574,14 @@ class World:
             banner_x = settings.VIRTUAL_WIDTH // 2 - banner_w // 2
             banner_y = 10
 
-            banner_rect = pygame.Rect(banner_x, banner_y, banner_w, banner_h)
-            pygame.draw.rect(surface, (25, 20, 18), banner_rect, border_radius=3)
-            pygame.draw.rect(surface, (190, 150, 70), banner_rect, 1, border_radius=3)
-            render_text(
-                surface,
+            notif_panel = Panel(banner_x, banner_y, banner_w, banner_h, theme=NOIR_PROMPT_THEME)
+            notif_panel.render(surface)
+            notif_label = Label(
+                settings.VIRTUAL_WIDTH // 2,
+                banner_y + 4,
                 notif["text"],
-                settings.FONTS["small"],
-                banner_rect.centerx,
-                banner_rect.y + 4,
-                (245, 235, 210),
+                font=settings.FONTS["small"],
                 center=True,
+                theme=NOIR_PROMPT_THEME,
             )
+            notif_label.render(surface)

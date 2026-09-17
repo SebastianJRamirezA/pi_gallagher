@@ -143,11 +143,21 @@ class StoryManager:
         mg = minigame_id.lower()
 
         if mg == "archive":
+            if self.flags["archive_completed"]:
+                return (
+                    False,
+                    "Ya he revisado los archivos policiales y recopilado los expedientes.",
+                )
             if self.level >= 1:
                 return True, ""
             return False, "El archivo está cerrado al público en este momento."
 
         if mg == "stealth":
+            if self.flags["stealth_completed"]:
+                return (
+                    False,
+                    "Ya he registrado las oficinas traseras y obtuve los documentos necesarios.",
+                )
             if self.flags["sofia_club_talked"]:
                 return True, ""
             return (
@@ -157,6 +167,11 @@ class StoryManager:
             )
 
         if mg == "safecracker":
+            if self.flags["safecracker_completed"]:
+                return (
+                    False,
+                    "La caja fuerte ya fue abierta y los documentos recuperados.",
+                )
             if self.flags["corcho3_done"] or "D03" in self.validated_deductions:
                 return True, ""
             return (

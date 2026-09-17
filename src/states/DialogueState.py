@@ -1,149 +1,182 @@
 """
 P.I. Gallagher: The Missing Art
 
-DialogueState — Noir 1932 styled dialogue interface.
-Supports multi-page sequences, speaker plaques, word wrapping,
-and callback execution upon dialogue completion.
+DialogueState — Refactored using gale.ui (Window, TextBox, Label, Container, UIManager).
+Renders dialogue in a 1932 Noir aesthetic with pagination, speaker plaque, and click/key advancing.
 """
 
 from typing import Any, Callable, List, Optional, Union
 
 import pygame
 
+from gale.input_handler import KeyboardData
 from gale.state import BaseState
-from gale.text import render_text
+from gale.ui import Container, Label, TextBox, Theme, UIManager, Window
 
 import settings
+from src.ui.theme import NOIR_DIALOGUE_THEME
+
+
+class DialogueTextBox(TextBox):
+    """
+    Subclass of gale.ui.TextBox that accepts multiple pages/paragraphs
+    and automatically partitions them according to lines_per_page.
+    """
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        pages: Union[str, List[str]],
+        lines_per_page: int = 3,
+        on_close: Optional[Callable[[], None]] = None,
+        theme: Optional[Theme] = None,
+    ) -> None:
+        self.raw_pages = [pages] if isinstance(pages, str) else list(pages)
+        # Inner theme with no extra border so it blends cleanly into the Window
+        inner_theme = Theme(
+            font=theme.font if theme else None,
+            text_color=theme.text_color if theme else pygame.Color(235, 228, 215),
+            background_color=theme.background_color if theme else pygame.Color(28, 24, 22),
+            border_color=theme.background_color if theme else pygame.Color(28, 24, 22),
+            border_width=0,
+            padding=2,
+        )
+        super().__init__(
+            x,
+            y,
+            width,
+            height,
+            text="",
+            lines_per_page=lines_per_page,
+            on_close=on_close,
+            theme=inner_theme,
+        )
+
+    def _paginate(self, text: str) -> List[List[str]]:
+        if not hasattr(self, "raw_pages"):
+            return [[]]
+
+        font = self._font if self._font is not None else self.theme.font
+        all_pages: List[List[str]] = []
+
+        for p in self.raw_pages:
+            wrapped = self._wrap(p, font)
+            for i in range(0, len(wrapped), self.lines_per_page):
+                all_pages.append(wrapped[i : i + self.lines_per_page])
+
+        return all_pages or [[]]
 
 
 class DialogueState(BaseState):
-    # Palette Noir 1932
-    COLOR_BG = (28, 24, 22)
-    COLOR_PAPER = (215, 198, 168)
-    COLOR_BORDER = (175, 140, 65)
-    COLOR_BORDER_DARK = (120, 95, 45)
-    COLOR_INK = (25, 22, 20)
-    COLOR_TEXT_LIGHT = (225, 220, 205)
-    COLOR_SPEAKER_BG = (45, 38, 32)
-    COLOR_MUTED = (145, 135, 120)
-
     def enter(
         self,
         text: Union[str, List[str]],
         speaker: str = "",
         on_finish: Optional[Callable[[], None]] = None,
     ) -> None:
-        if isinstance(text, str):
-            self.pages = [text]
-        else:
-            self.pages = list(text) if text else ["..."]
-
-        self.speaker = speaker
+        self.speaker = speaker or "P.I. Gallagher"
         self.on_finish = on_finish
-        self.page_index = 0
+
+        # Root container for gale.ui
+        self.root = Container(0, 0, settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT)
+
+        # Dialogue Window docked at bottom of screen
+        win_x = 16
+        win_y = settings.VIRTUAL_HEIGHT - 82
+        win_w = settings.VIRTUAL_WIDTH - 32
+        win_h = 72
+
+        self.window = Window(
+            win_x,
+            win_y,
+            win_w,
+            win_h,
+            title=self.speaker,
+            closable=False,
+            theme=NOIR_DIALOGUE_THEME,
+        )
+
+        # Dialogue text box inside the window
+        tb_x = win_x + 10
+        tb_y = win_y + 24
+        tb_w = win_w - 20
+        tb_h = 44
+
+        self.textbox = DialogueTextBox(
+            tb_x,
+            tb_y,
+            tb_w,
+            tb_h,
+            pages=text,
+            lines_per_page=3,
+            on_close=self._close_dialogue,
+            theme=NOIR_DIALOGUE_THEME,
+        )
+        self.window.add_child(self.textbox)
+
+        # Footer page indicator / navigation hint
+        self.hint_label = Label(
+            win_x + win_w - 120,
+            win_y + win_h - 14,
+            text="",
+            font=settings.FONTS["small"],
+            color=pygame.Color(160, 150, 135),
+            theme=NOIR_DIALOGUE_THEME,
+        )
+        self.window.add_child(self.hint_label)
+        self._update_hint_text()
+
+        self.root.add_child(self.window)
+
+        # UIManager to route mouse clicks and keyboard actions
+        self.ui = UIManager(
+            self.root,
+            virtual_width=settings.VIRTUAL_WIDTH,
+            window_width=settings.WINDOW_WIDTH,
+            virtual_height=settings.VIRTUAL_HEIGHT,
+            window_height=settings.WINDOW_HEIGHT,
+            confirm_action="confirm",
+        )
+
+    def _update_hint_text(self) -> None:
+        total = self.textbox.page_count
+        current = self.textbox.page_index + 1
+        if total > 1:
+            self.hint_label.set_text(f"[{current}/{total}]  ESPACIO >>")
+        else:
+            self.hint_label.set_text("ESPACIO para cerrar")
+
+    def _close_dialogue(self) -> None:
+        if self.on_finish is not None:
+            cb = self.on_finish
+            self.on_finish = None
+            cb()
+        self.state_machine.pop()
+
+    def update(self, dt: float) -> None:
+        self.ui.update(dt)
+        self._update_hint_text()
 
     def on_input(self, input_id: str, input_data: Any) -> None:
-        if not input_data.pressed:
+        if isinstance(input_data, KeyboardData) and not input_data.pressed:
             return
 
         if input_id in ("interact", "enter", "confirm"):
-            if self.page_index < len(self.pages) - 1:
-                self.page_index += 1
-            else:
-                if self.on_finish is not None:
-                    callback = self.on_finish
-                    self.on_finish = None
-                    callback()
-                self.state_machine.pop()
+            self.textbox.advance()
+            return
 
-    def _wrap_text(self, text: str, max_width: int) -> List[str]:
-        words = text.split()
-        lines = []
-        current_line = ""
-        font = settings.FONTS["small"]
-
-        for word in words:
-            test_line = current_line + (" " if current_line else "") + word
-            if font.size(test_line)[0] <= max_width:
-                current_line = test_line
-            else:
-                if current_line:
-                    lines.append(current_line)
-                current_line = word
-
-        if current_line:
-            lines.append(current_line)
-        return lines
+        self.ui.on_input(input_id, input_data)
 
     def render(self, surface: pygame.Surface) -> None:
         # Subtle dark veil over the world
         overlay = pygame.Surface(
             (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA
         )
-        overlay.fill((0, 0, 0, 80))
+        overlay.fill((0, 0, 0, 85))
         surface.blit(overlay, (0, 0))
 
-        # Main dialogue box (bottom of the screen)
-        bx = 16
-        by = settings.VIRTUAL_HEIGHT - 82
-        bw = settings.VIRTUAL_WIDTH - 32
-        bh = 72
-
-        box_rect = pygame.Rect(bx, by, bw, bh)
-
-        # Background and border
-        pygame.draw.rect(surface, self.COLOR_BG, box_rect, border_radius=4)
-        pygame.draw.rect(surface, self.COLOR_BORDER, box_rect, 2, border_radius=4)
-        pygame.draw.rect(
-            surface, self.COLOR_BORDER_DARK, box_rect.inflate(-4, -4), 1, border_radius=3
-        )
-
-        # Speaker name plaque (if provided)
-        if self.speaker:
-            name_text = f" {self.speaker} "
-            nw, nh = settings.FONTS["small"].size(name_text)
-            name_rect = pygame.Rect(bx + 14, by - 12, nw + 12, nh + 4)
-            pygame.draw.rect(surface, self.COLOR_SPEAKER_BG, name_rect, border_radius=3)
-            pygame.draw.rect(surface, self.COLOR_BORDER, name_rect, 1, border_radius=3)
-            render_text(
-                surface,
-                self.speaker,
-                settings.FONTS["small"],
-                name_rect.centerx,
-                name_rect.y + 2,
-                self.COLOR_BORDER,
-                center=True,
-            )
-
-        # Current page text (word wrapped)
-        current_text = self.pages[self.page_index]
-        wrapped_lines = self._wrap_text(current_text, bw - 28)
-
-        text_y = by + 12
-        for line in wrapped_lines[:3]:
-            render_text(
-                surface,
-                line,
-                settings.FONTS["small"],
-                bx + 14,
-                text_y,
-                self.COLOR_TEXT_LIGHT,
-            )
-            text_y += 16
-
-        # Navigation hint / page indicator
-        total_pages = len(self.pages)
-        if total_pages > 1:
-            page_hint = f"[{self.page_index + 1}/{total_pages}]  ESPACIO / ENTER >>"
-        else:
-            page_hint = "ESPACIO / ENTER para cerrar"
-
-        render_text(
-            surface,
-            page_hint,
-            settings.FONTS["small"],
-            box_rect.right - 14,
-            box_rect.bottom - 16,
-            self.COLOR_MUTED,
-            center=False,
-        )
+        # Render gale.ui widget tree
+        self.ui.render(surface)
