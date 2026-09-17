@@ -17,6 +17,7 @@ from gale.ui import Label, Panel
 import settings
 from src.data.dialogues import DIALOGUES
 from src.entity import NPC, Player
+from src.states.ConfrontationState import ConfrontationState
 from src.states.CorkboardState import CorkboardState
 from src.states.DialogueState import DialogueState
 from src.states.minigames import PoliceArchiveState, SafeCrackerState, StealthMinigameState
@@ -448,16 +449,22 @@ class World:
             if not self.story.flags["morales_confronted"]:
                 data = DIALOGUES["morales_interrogation"]
 
-                def on_morales():
-                    for c in data["reward_cards"]:
-                        self.story.add_card(c)
-                    self.story.flags["morales_confronted"] = True
+                def on_confrontation_complete():
+                    def on_confession_end():
+                        for c in data["reward_cards"]:
+                            self.story.add_card(c)
+                        self.story.flags["morales_confronted"] = True
+                    self.stack.push(
+                        DialogueState(self.stack),
+                        text=data["pages"],
+                        speaker=data["speaker"],
+                        on_finish=on_confession_end,
+                    )
 
                 self.stack.push(
-                    DialogueState(self.stack),
-                    text=data["pages"],
-                    speaker=data["speaker"],
-                    on_finish=on_morales,
+                    ConfrontationState(self.stack),
+                    confrontation_id="morales",
+                    on_complete=on_confrontation_complete
                 )
             else:
                 self.stack.push(
