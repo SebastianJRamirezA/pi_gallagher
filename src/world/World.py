@@ -18,9 +18,7 @@ from src.data.dialogues import DIALOGUES
 from src.entity import NPC, Player
 from src.states.CorkboardState import CorkboardState
 from src.states.DialogueState import DialogueState
-from src.states.PoliceArchiveState import PoliceArchiveState
-from src.states.SafeCrackerState import SafeCrackerState
-from src.states.StealthMinigameState import StealthMinigameState
+from src.states.minigames import PoliceArchiveState, SafeCrackerState, StealthMinigameState
 from src.story.StoryManager import StoryManager
 from src.world.Region import Region
 from src.world.Trigger import Trigger
