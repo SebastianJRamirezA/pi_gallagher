@@ -24,6 +24,7 @@ from src.story.StoryManager import StoryManager
 from src.ui.theme import NOIR_PROMPT_THEME
 from src.world.Region import Region
 from src.world.Trigger import Trigger
+from src.text_utils import wrap_text
 
 
 class World:
@@ -85,7 +86,7 @@ class World:
                 width=44,
                 height=26,
                 trigger_type="corkboard",
-                prompt_text="[ESPACIO / E] Examinar Pizarra de Corcho",
+                prompt_text="[ESPACIO] Examinar Pizarra de Corcho",
                 action_fn=self._open_corkboard,
             )
         )
@@ -100,7 +101,7 @@ class World:
                 width=48,
                 height=28,
                 trigger_type="interaction",
-                prompt_text="[ESPACIO / E] Inspeccionar marco vacío robado",
+                prompt_text="[ESPACIO] Inspeccionar marco vacío robado",
                 action_fn=self._inspect_museum_frame,
             )
         )
@@ -115,7 +116,7 @@ class World:
                 width=40,
                 height=36,
                 trigger_type="minigame",
-                prompt_text="[ESPACIO / E] Infiltrarse en archivo policial",
+                prompt_text="[ESPACIO] Infiltrarse en archivo policial",
                 action_fn=self._start_archive_minigame,
             )
         )
@@ -130,7 +131,7 @@ class World:
                 width=90,
                 height=40,
                 trigger_type="minigame",
-                prompt_text="[ESPACIO / E] Entrar a oficinas traseras (Sigilo)",
+                prompt_text="[ESPACIO] Entrar a oficinas traseras (Sigilo)",
                 action_fn=lambda w, s: self._try_enter_club_door("stealth"),
             )
         )
@@ -142,7 +143,7 @@ class World:
                 width=32,
                 height=24,
                 trigger_type="minigame",
-                prompt_text="[ESPACIO / E] Forzar caja fuerte de la bóveda",
+                prompt_text="[ESPACIO] Forzar caja fuerte de la bóveda",
                 action_fn=lambda w, s: self._try_enter_club_door("safecracker"),
             )
         )
@@ -385,7 +386,7 @@ class World:
         # Check NPCs in current region (direct rect collision)
         for npc in self.region.npcs:
             if player_rect.colliderect(npc.rect):
-                self.active_prompt = f"[ESPACIO / E] Hablar con {npc.name}"
+                self.active_prompt = f"[ESPACIO] Hablar con {npc.name}"
                 self.active_interactable = npc
                 return
 
@@ -527,61 +528,77 @@ class World:
 
     # ── Renderizado del Mundo y UI ───────────────────────────────────────────
 
+    # ── Renderizado del Mundo y UI ───────────────────────────────────────────
+
     def render(self, surface: pygame.Surface) -> None:
+        # 1. Render World & Player
         self.region.render(surface, self.camera)
         self.player.render(surface, self.camera)
 
-        # Region label in top-left
-        reg_text = self.current_region_name.upper()
-        rw, rh = settings.FONTS["medium"].size(reg_text)
-        reg_panel = Panel(10, 8, rw + 14, rh + 6, theme=NOIR_PROMPT_THEME)
-        reg_panel.render(surface)
-        reg_label = Label(
-            17,
-            11,
-            reg_text,
-            font=settings.FONTS["medium"],
-            theme=NOIR_PROMPT_THEME,
-        )
-        reg_label.render(surface)
+        font = settings.FONTS["medium"]
 
-        # Floating Interaction Prompt badge
-        if self.active_prompt:
-            pw, ph = settings.FONTS["medium"].size(self.active_prompt)
-            badge_w = pw + 16
-            badge_h = ph + 8
-            badge_x = settings.VIRTUAL_WIDTH // 2 - badge_w // 2
-            badge_y = settings.VIRTUAL_HEIGHT - 34
+        # Region Label (Top-Left)
+        if not self.story.notifications:
+            reg_text = self.current_region_name.upper()
+            rw, rh = font.size(reg_text)
 
-            prompt_panel = Panel(badge_x, badge_y, badge_w, badge_h, theme=NOIR_PROMPT_THEME)
-            prompt_panel.render(surface)
-            prompt_label = Label(
-                settings.VIRTUAL_WIDTH // 2,
-                badge_y + 4,
-                self.active_prompt,
-                font=settings.FONTS["medium"],
-                center=True,
+            reg_panel = Panel(10, 8, rw + 16, rh + 8, theme=NOIR_PROMPT_THEME)
+            reg_panel.render(surface)
+
+            reg_label = Label(
+                18,
+                12,
+                reg_text,
+                font=font,
                 theme=NOIR_PROMPT_THEME,
             )
-            prompt_label.render(surface)
-
-        # Floating Notification Banners (at top center)
-        if self.story.notifications:
+            reg_label.render(surface)
+        # Floating Notification Banners (Top Center)
+        else:
             notif = self.story.notifications[0]
-            nw, nh = settings.FONTS["medium"].size(notif["text"])
-            banner_w = nw + 24
-            banner_h = nh + 8
-            banner_x = settings.VIRTUAL_WIDTH // 2 - banner_w // 2
+            max_text_w = settings.VIRTUAL_WIDTH - 60
+
+            # Shared wrap_text helper from src.text_utils
+            lines = wrap_text(font, notif["text"], max_text_w)
+
+            line_height = font.get_linesize()
+            text_w = max(font.size(line)[0] for line in lines)
+
+            banner_w = text_w + 24
+            banner_h = (line_height * len(lines)) + 12
+            banner_x = (settings.VIRTUAL_WIDTH - banner_w) // 2
             banner_y = 10
 
             notif_panel = Panel(banner_x, banner_y, banner_w, banner_h, theme=NOIR_PROMPT_THEME)
             notif_panel.render(surface)
-            notif_label = Label(
-                settings.VIRTUAL_WIDTH // 2,
-                banner_y + 4,
-                notif["text"],
-                font=settings.FONTS["medium"],
-                center=True,
+
+            for i, line in enumerate(lines):
+                line_y = banner_y + 6 + (i * line_height)
+                notif_label = Label(
+                    banner_x + 12,
+                    line_y,
+                    line,
+                    font=font,
+                    theme=NOIR_PROMPT_THEME,
+                )
+                notif_label.render(surface)
+
+        # 3. Floating Interaction Prompt Badge (Bottom Center)
+        if self.active_prompt:
+            pw, ph = font.size(self.active_prompt)
+            badge_w = pw + 20
+            badge_h = ph + 10
+            badge_x = (settings.VIRTUAL_WIDTH - badge_w) // 2
+            badge_y = settings.VIRTUAL_HEIGHT - 36
+
+            prompt_panel = Panel(badge_x, badge_y, badge_w, badge_h, theme=NOIR_PROMPT_THEME)
+            prompt_panel.render(surface)
+
+            prompt_label = Label(
+                badge_x + 10,
+                badge_y + 5,
+                self.active_prompt,
+                font=font,
                 theme=NOIR_PROMPT_THEME,
             )
-            notif_label.render(surface)
+            prompt_label.render(surface)

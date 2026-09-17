@@ -86,10 +86,9 @@ class CardButton(Button):
         # Card Title with cursor indicator when focused
         cid = self.card_data["id"]
         title = self.card_data["titulo"]
-        title_prefix = "> " if self.focused else ""
         render_text(
             surface,
-            f"{title_prefix}[{cid}] {title}",
+            f"[{cid}] {title}",
             settings.FONTS["small"],
             self.x + 4,
             self.y + 6,
@@ -117,6 +116,6 @@ class CardButton(Button):
             "[D: Ver]",
             settings.FONTS["small"],
             self.rect.right - 44,
-            self.y + 20,
+            self.y + 34,
             COLOR_MUTED,
         )

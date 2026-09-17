@@ -14,6 +14,7 @@ from gale.state import BaseState
 from gale.ui import Container, Label, TextBox, Theme, UIManager, Window
 
 import settings
+from src.text_utils import wrap_text
 from src.ui.theme import NOIR_DIALOGUE_THEME
 
 
@@ -61,9 +62,11 @@ class DialogueTextBox(TextBox):
 
         font = self._font if self._font is not None else self.theme.font
         all_pages: List[List[str]] = []
+        max_w = self.rect.width - (self.theme.padding * 2)
 
         for p in self.raw_pages:
-            wrapped = self._wrap(p, font)
+            # Shared helper function from text_utils.py
+            wrapped = wrap_text(font, p, max_w)
             for i in range(0, len(wrapped), self.lines_per_page):
                 all_pages.append(wrapped[i : i + self.lines_per_page])
 

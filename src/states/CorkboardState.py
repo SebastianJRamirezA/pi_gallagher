@@ -68,7 +68,7 @@ class CorkboardState(BaseState):
         grid_x = 12
         grid_y = 34
         card_w = 152
-        card_h = 36
+        card_h = 50
         gap_x = 8
         gap_y = 4
         cols = 2
@@ -178,7 +178,7 @@ class CorkboardState(BaseState):
         self.bar_hint_label = Label(
             20,
             bar_y + 6,
-            "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda |  ESC: Salir",
+            "Flechitas: Moverse  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda  |  ESC: Salir",
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=NOIR_SIDEBAR_THEME,
