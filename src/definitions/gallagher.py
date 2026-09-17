@@ -3,7 +3,7 @@ P.I. Gallagher: The Missing Art
 
 Animation and entity definitions for Gallagher (player character).
 
-Spritesheet: gallagher.png — 57×112 pixels, 3 columns × 4 rows of 19×28 frames.
+Spritesheet: gallagher.png — 57x112 pixels, 3 columns x 4 rows of 19x28 frames.
   Row 0 (frames 0-2): facing down
   Row 1 (frames 3-5): facing up
   Row 2 (frames 6-8): facing right

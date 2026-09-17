@@ -11,7 +11,7 @@ import pygame
 import settings
 
 
-# Direction → frame index for NPC placeholder sprites (3 cols × 4 rows).
+# Direction → frame index for NPC placeholder sprites (3 cols x 4 rows).
 DIRECTIONS = {
     "up": 1,
     "right": 4,
@@ -30,24 +30,25 @@ class Actor:
         self.texture = texture
         self.name = name
         self.direction = direction
-        self.width = 16
-        self.height = 16
+        self.width = 14
+        self.height = 14
 
     @property
     def rect(self) -> pygame.Rect:
-        # 16x16 box anchored at the feet (y + 12) and horizontally centered (x + 1)
-        return pygame.Rect(round(self.x + 1), round(self.y + 12), 16, 16)
+        # Full sprite bounds (16x18) anchored at the sprite origin — matches what is rendered.
+        return pygame.Rect(round(self.x), round(self.y), 16, 18)
 
     @rect.setter
     def rect(self, value: pygame.Rect) -> None:
-        self.x = value.x - 1
-        self.y = value.y - 12
+        self.x = value.x
+        self.y = value.y
 
     def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         frame = settings.FRAMES[self.texture][DIRECTIONS[self.direction]]
-        position = pygame.Rect(round(self.x), round(self.y), 16, 16)
+        position = pygame.Rect(round(self.x), round(self.y), frame.width, frame.height)
         if camera is not None:
             position = camera.apply(position)
         surface.blit(settings.TEXTURES[self.texture], position, frame)
         # Draw collision box for debugging
-        pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.rect), 1)
+        if camera is not None:
+            pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.rect), 1)

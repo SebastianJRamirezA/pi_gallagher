@@ -35,10 +35,8 @@ class Trigger:
         self.action_fn = action_fn
 
     def collides(self, player_rect: pygame.Rect) -> bool:
-        """Check if the player is touching or overlapping this trigger area."""
-        # Expand trigger slightly for easy interaction proximity (6px margin)
-        expanded = self.rect.inflate(12, 12)
-        return player_rect.colliderect(expanded)
+        """Check if the player's sprite rect directly overlaps this trigger area."""
+        return player_rect.colliderect(self.rect)
 
     def check_condition(self, story: StoryManager) -> Tuple[bool, str]:
         """Verify if this trigger's condition is met."""

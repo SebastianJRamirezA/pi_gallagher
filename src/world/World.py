@@ -275,7 +275,7 @@ class World:
     def _move_axis(self, dx: float, dy: float) -> None:
         if not dx and not dy:
             return
-        next_rect = self.player.rect.move(round(dx), round(dy))
+        next_rect = self.player.collision_rect.move(round(dx), round(dy))
         if self.region.is_walkable(next_rect):
             self.player.x += dx
             self.player.y += dy
@@ -284,7 +284,7 @@ class World:
         return self.region.tilemap.object_layers.get("Doors", [])
 
     def _door_collides(self, door) -> bool:
-        player_rect = self.player.rect
+        player_rect = self.player.collision_rect
         if not getattr(door, "width", 0) or not getattr(door, "height", 0):
             return player_rect.collidepoint(round(door.x), round(door.y))
         door_rect = pygame.Rect(
@@ -380,10 +380,9 @@ class World:
                 self.active_interactable = trigger
                 return
 
-        # Check NPCs in current region (within 30px)
-        player_center = player_rect.center
+        # Check NPCs in current region (direct rect collision)
         for npc in self.region.npcs:
-            if pygame.Vector2(player_center).distance_to(npc.rect.center) <= 28:
+            if player_rect.colliderect(npc.rect):
                 self.active_prompt = f"[ESPACIO / E] Hablar con {npc.name}"
                 self.active_interactable = npc
                 return

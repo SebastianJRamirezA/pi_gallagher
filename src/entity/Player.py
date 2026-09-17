@@ -46,6 +46,18 @@ class Player(Actor):
         )
         self.state_machine.change("idle")
 
+    # ── Collision / Geometry ────────────────────────────────────────────
+
+    @property
+    def rect(self) -> pygame.Rect:
+        """Full 19x28 sprite bounds — matches what is rendered and is used for interaction detection."""
+        return pygame.Rect(round(self.x), round(self.y), 19, 28)
+
+    @property
+    def collision_rect(self) -> pygame.Rect:
+        """14x14 foot-box used exclusively for tile walkability and door collision."""
+        return pygame.Rect(round(self.x + 4), round(self.y + 15), 13, 13)
+
     # ── State / animation helpers ──────────────────────────────────────
 
     def change_state(self, name: str) -> None:
@@ -75,8 +87,9 @@ class Player(Actor):
     def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         self.camera = camera
         self.state_machine.render(surface)
-        # Draw collision box for debugging
-        pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.rect), 1)
+        # Draw collision box matching the rendered sprite
+        if camera is not None:
+            pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.collision_rect), 1)
 
     # ── Input ──────────────────────────────────────────────────────────
 
