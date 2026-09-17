@@ -8,8 +8,12 @@ from typing import Optional
 
 from gale.ui import Button, Container
 from gale.ui.widget import Direction
+from gale.text import render_text
+import pygame
+import settings
 
 from src.ui import CardButton
+from src.ui.theme import COLOR_BRASS_LIGHT
 
 class CardGridContainer(Container):
     """
@@ -24,9 +28,9 @@ class CardGridContainer(Container):
         width: float,
         height: float,
         cols: int = 2,
-        visible_rows: int = 4,
+        visible_rows: int = 3,
         card_w: int = 152,
-        card_h: int = 36,
+        card_h: int = 50,
         gap_x: int = 8,
         gap_y: int = 4,
         **kwargs,
@@ -62,14 +66,18 @@ class CardGridContainer(Container):
     def _update_scroll_position(self, target_idx: int) -> None:
         target_row = target_idx // self.cols
         
-        # Adjust scroll offset if target row goes outside the visible viewport
         if target_row < self.scroll_row_offset:
             self.scroll_row_offset = target_row
         elif target_row >= self.scroll_row_offset + self.visible_rows:
             self.scroll_row_offset = target_row - self.visible_rows + 1
 
-        # Reposition and toggle visibility of card buttons based on current scroll offset
         card_buttons = [c for c in self.children if isinstance(c, CardButton)]
+        total_rows = (len(card_buttons) + self.cols - 1) // self.cols
+
+        # Track scroll boundaries
+        self.can_scroll_up = self.scroll_row_offset > 0
+        self.can_scroll_down = (self.scroll_row_offset + self.visible_rows) < total_rows
+
         for i, btn in enumerate(card_buttons):
             row = i // self.cols
             col = i % self.cols
@@ -77,10 +85,44 @@ class CardGridContainer(Container):
             if self.scroll_row_offset <= row < self.scroll_row_offset + self.visible_rows:
                 btn.visible = True
                 visible_row = row - self.scroll_row_offset
-                btn.rect.x = int(self.rect.x + col * (self.card_w + self.gap_x))
-                btn.rect.y = int(self.rect.y + visible_row * (self.card_h + self.gap_y))
+                new_x = int(self.rect.x + col * (self.card_w + self.gap_x))
+                new_y = int(self.rect.y + visible_row * (self.card_h + self.gap_y))
+                
+                btn.rect.x = new_x
+                btn.rect.y = new_y
+                btn.x = new_x
+                btn.y = new_y
             else:
                 btn.visible = False
+
+    def render(self, surface: pygame.Surface) -> None:
+        super().render(surface)
+
+        # X coordinate centered over the grid
+        arrow_x = int(self.rect.x + (self.cols * (self.card_w + self.gap_x) - self.gap_x) / 2 - 3)
+        
+        # Color matching the corkboard board brass highlights
+        color = pygame.Color(230, 175, 45)
+
+        # Up Arrow Triangle
+        if getattr(self, "can_scroll_up", False):
+            top_y = self.rect.y
+            points = [
+                (arrow_x + 3, top_y - 12),           # Top vertex
+                (arrow_x, top_y - 3),           # Bottom-left vertex
+                (arrow_x + 6, top_y - 3),       # Bottom-right vertex
+            ]
+            pygame.draw.polygon(surface, color, points)
+
+        # Down Arrow Triangle
+        if getattr(self, "can_scroll_down", False):
+            bottom_y = int(self.rect.y + (self.card_h + self.gap_y) * self.visible_rows)
+            points = [
+                (arrow_x + 3, bottom_y + 12),    # Top vertex
+                (arrow_x, bottom_y + 3),            # Bottom-left vertex
+                (arrow_x + 6, bottom_y + 3),        # Bottom-right vertex
+            ]
+            pygame.draw.polygon(surface, color, points)
 
     def _move_focus(self, direction: Direction) -> bool:
         card_buttons = [c for c in self.children if isinstance(c, CardButton)]

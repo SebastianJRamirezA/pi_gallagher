@@ -66,7 +66,7 @@ class CorkboardState(BaseState):
         # 2. Card Grid Container (2 columns of cards)
         self.card_buttons: List[CardButton] = []
         grid_x = 12
-        grid_y = 34
+        grid_y = 45
         card_w = 152
         card_h = 50
         gap_x = 8
@@ -136,7 +136,7 @@ class CorkboardState(BaseState):
         sidebar_x = 328
         sidebar_y = 34
         sidebar_w = 140
-        sidebar_h = 156
+        sidebar_h = 190
 
         self.sidebar_win = Window(
             sidebar_x,
