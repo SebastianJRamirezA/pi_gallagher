@@ -11,7 +11,7 @@ from gale.ui.widget import Direction
 import settings
 from src.data.confrontation_data import MORALES_CONFRONTATION, SOFIA_CONFRONTATION, ConfrontationPhase
 from src.data.cards import CARDS
-from src.states.CorkboardState import CardButton, ActionBarContainer
+from src.ui import CardButton, ActionBarContainer
 from src.story.StoryManager import StoryManager
 from src.ui.theme import NOIR_DIALOGUE_THEME, NOIR_CARD_THEME, NOIR_SIDEBAR_THEME, COLOR_ACCENT_RED, COLOR_SUCCESS
 
