@@ -62,7 +62,7 @@ class PhaseBFailSubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["medium"],
+                    settings.FONTS["large"],
                     settings.VIRTUAL_WIDTH // 2,
                     y,
                     COLORS["paper"],
@@ -75,7 +75,7 @@ class PhaseBFailSubstate(BaseState):
             render_text(
                 surface,
                 "ESPACIO para reintentar",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 settings.VIRTUAL_WIDTH // 2,
                 200,
                 COLORS["muted"],

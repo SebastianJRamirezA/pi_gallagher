@@ -101,9 +101,10 @@ TILESETS = {
 }
 
 FONTS = {
-    "small": pygame.font.Font(None, 16),
-    "medium": pygame.font.Font(None, 26),
-    "large": pygame.font.Font(None, 42),
+    "small": pygame.font.Font(None, 14),
+    "medium": pygame.font.Font(None, 18),
+    "large": pygame.font.Font(None, 26),
+    "xlarge": pygame.font.Font(None, 42),
 }
 
 SOUNDS = {

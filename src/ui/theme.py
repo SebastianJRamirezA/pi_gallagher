@@ -26,7 +26,7 @@ COLOR_DANGER = pygame.Color(190, 50, 40)
 
 # ── Diálogo Theme ──────────────────────────────────────────────────────────
 NOIR_DIALOGUE_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=pygame.Color(235, 228, 215),
     background_color=COLOR_NOIR_BG,
     border_color=COLOR_BRASS,
@@ -40,7 +40,7 @@ NOIR_DIALOGUE_THEME = Theme(
 
 # ── Pizarra de Corcho: Base Board Theme ─────────────────────────────────────
 NOIR_CORK_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=COLOR_INK,
     background_color=pygame.Color(148, 112, 78),
     border_color=pygame.Color(55, 35, 22),
@@ -53,7 +53,7 @@ NOIR_CORK_THEME = Theme(
 
 # ── Tarjeta de Corcho Theme ────────────────────────────────────────────────
 NOIR_CARD_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=COLOR_INK,
     background_color=COLOR_PAPER,
     border_color=pygame.Color(140, 130, 115),
@@ -65,7 +65,7 @@ NOIR_CARD_THEME = Theme(
 )
 
 NOIR_CARD_THREADED_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=COLOR_INK,
     background_color=COLOR_PAPER_THREADED,
     border_color=COLOR_ACCENT_RED,
@@ -78,7 +78,7 @@ NOIR_CARD_THREADED_THEME = Theme(
 
 # ── Sidebar y Dudas Abiertas Theme ──────────────────────────────────────────
 NOIR_SIDEBAR_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=pygame.Color(220, 210, 195),
     background_color=COLOR_NOIR_PANEL,
     border_color=COLOR_BRASS,
@@ -89,7 +89,7 @@ NOIR_SIDEBAR_THEME = Theme(
 
 # ── Botones de Acción Theme ────────────────────────────────────────────────
 NOIR_BUTTON_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=pygame.Color(235, 225, 210),
     background_color=COLOR_NOIR_PANEL,
     border_color=COLOR_BRASS,
@@ -101,7 +101,7 @@ NOIR_BUTTON_THEME = Theme(
 
 # ── HUD / Prompts Theme ────────────────────────────────────────────────────
 NOIR_PROMPT_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=pygame.Color(235, 225, 205),
     background_color=COLOR_NOIR_BG,
     border_color=COLOR_BRASS,
@@ -111,7 +111,7 @@ NOIR_PROMPT_THEME = Theme(
 
 # ── Menú de Pausa Theme ────────────────────────────────────────────────────
 NOIR_MENU_THEME = Theme(
-    font=settings.FONTS["small"],
+    font=settings.FONTS["medium"],
     text_color=pygame.Color(235, 230, 215),
     background_color=COLOR_NOIR_BG,
     border_color=COLOR_BRASS,

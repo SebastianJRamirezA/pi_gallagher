@@ -182,20 +182,20 @@ class SafeCrackerState(BaseState):
         pygame.draw.circle(surface, self.COLOR_BRASS, center, 7)
 
         render_text(surface, "THE QUIET DIAL", settings.FONTS["large"], 30, 32, self.COLOR_TEXT)
-        render_text(surface, f"TUMBLER  {min(self.stage + 1, 3)} / 3", settings.FONTS["small"], 30, 72, self.COLOR_MUTED)
-        render_text(surface, f"{self._dial_number():02d}", settings.FONTS["medium"], center[0], 224, self.COLOR_TEXT, center=True)
-        render_text(surface, self.message, settings.FONTS["small"], 30, 238, self.COLOR_DANGER if self.overshot else self.COLOR_TEXT)
+        render_text(surface, f"TUMBLER  {min(self.stage + 1, 3)} / 3", settings.FONTS["medium"], 30, 72, self.COLOR_MUTED)
+        render_text(surface, f"{self._dial_number():02d}", settings.FONTS["large"], center[0], 224, self.COLOR_TEXT, center=True)
+        render_text(surface, self.message, settings.FONTS["medium"], 30, 238, self.COLOR_DANGER if self.overshot else self.COLOR_TEXT)
 
         stress = 0.0 if self.complete else min(1.0, max(0.0, (5.0 - self._target_distance()) / 5.0))
         if self.overshot:
             stress = 1.0
         pygame.draw.rect(surface, (53, 50, 48), (345, 72, 92, 9))
         pygame.draw.rect(surface, self.COLOR_DANGER if stress > 0.8 else self.COLOR_BRASS, (345, 72, int(92 * stress), 9))
-        render_text(surface, "STRESS", settings.FONTS["small"], 345, 55, self.COLOR_MUTED)
+        render_text(surface, "STRESS", settings.FONTS["medium"], 345, 55, self.COLOR_MUTED)
 
-        render_text(surface, "TIME: " + str(self.timer), settings.FONTS["small"], 345, 105, self.COLOR_MUTED)
+        render_text(surface, "TIME: " + str(self.timer), settings.FONTS["medium"], 345, 105, self.COLOR_MUTED)
 
-        render_text(surface, "A/D or arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["small"], 30, 260, self.COLOR_MUTED)
+        render_text(surface, "A/D or arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["medium"], 30, 260, self.COLOR_MUTED)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:

@@ -533,21 +533,21 @@ class World:
 
         # Region label in top-left
         reg_text = self.current_region_name.upper()
-        rw, rh = settings.FONTS["small"].size(reg_text)
+        rw, rh = settings.FONTS["medium"].size(reg_text)
         reg_panel = Panel(10, 8, rw + 14, rh + 6, theme=NOIR_PROMPT_THEME)
         reg_panel.render(surface)
         reg_label = Label(
             17,
             11,
             reg_text,
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             theme=NOIR_PROMPT_THEME,
         )
         reg_label.render(surface)
 
         # Floating Interaction Prompt badge
         if self.active_prompt:
-            pw, ph = settings.FONTS["small"].size(self.active_prompt)
+            pw, ph = settings.FONTS["medium"].size(self.active_prompt)
             badge_w = pw + 16
             badge_h = ph + 8
             badge_x = settings.VIRTUAL_WIDTH // 2 - badge_w // 2
@@ -559,7 +559,7 @@ class World:
                 settings.VIRTUAL_WIDTH // 2,
                 badge_y + 4,
                 self.active_prompt,
-                font=settings.FONTS["small"],
+                font=settings.FONTS["medium"],
                 center=True,
                 theme=NOIR_PROMPT_THEME,
             )
@@ -568,7 +568,7 @@ class World:
         # Floating Notification Banners (at top center)
         if self.story.notifications:
             notif = self.story.notifications[0]
-            nw, nh = settings.FONTS["small"].size(notif["text"])
+            nw, nh = settings.FONTS["medium"].size(notif["text"])
             banner_w = nw + 24
             banner_h = nh + 8
             banner_x = settings.VIRTUAL_WIDTH // 2 - banner_w // 2
@@ -580,7 +580,7 @@ class World:
                 settings.VIRTUAL_WIDTH // 2,
                 banner_y + 4,
                 notif["text"],
-                font=settings.FONTS["small"],
+                font=settings.FONTS["medium"],
                 center=True,
                 theme=NOIR_PROMPT_THEME,
             )

@@ -35,7 +35,7 @@ from src.ui.theme import (
     NOIR_SIDEBAR_THEME,
 )
 
-from src.ui import CardButton, ActionBarContainer, CardGridContainer, ModalOverlay, CorkboardMainContainer
+from src.ui import CardButton, CardGridContainer, ModalOverlay
 
 class CorkboardState(BaseState):
     def enter(self) -> None:
@@ -58,7 +58,12 @@ class CorkboardState(BaseState):
         self.cards = self.story.get_available_cards_for_corkboard()
         self.cards.sort(key=lambda c: c["id"])
 
-        # 1. Card Grid Container (2 columns of cards)
+        # 1. Main Corkboard Background Panel
+        self.board_panel = Panel(
+            6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12, theme=NOIR_CORK_THEME
+        )
+
+        # 2. Card Grid Container (2 columns of cards)
         self.card_buttons: List[CardButton] = []
         grid_x = 12
         grid_y = 34
@@ -71,6 +76,9 @@ class CorkboardState(BaseState):
         self.card_grid = CardGridContainer(
             grid_x, grid_y, (card_w + gap_x) * cols, (card_h + gap_y) * 4, cols=cols
         )
+
+        # Add background panel to grid FIRST so it renders behind card buttons
+        self.card_grid.add_child(self.board_panel)
 
         for i, card in enumerate(self.cards):
             row = i // cols
@@ -96,79 +104,13 @@ class CorkboardState(BaseState):
             self.card_buttons.append(btn)
             self.card_grid.add_child(btn)
 
-        # 2. Bottom Action Bar Container with 5 buttons
         bar_x = 12
-        bar_y = 200
+        bar_y = 229
         bar_w = 456
-        bar_h = 58
-        btn_y = bar_y + 6
-        btn_h = 22
-
-        self.action_bar = ActionBarContainer(bar_x, btn_y, bar_w, btn_h)
-
-        self.btn_details = Button(
-            18,
-            btn_y,
-            96,
-            btn_h,
-            "Detalles [D]",
-            on_click=self._open_focused_card_details,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_thread = Button(
-            118,
-            btn_y,
-            92,
-            btn_h,
-            "Hilo [ESPACIO]",
-            on_click=self._toggle_focused_card_thread,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_deduce = Button(
-            214,
-            btn_y,
-            88,
-            btn_h,
-            "Deducir [ENTER]",
-            on_click=self._attempt_deduction,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_hint = Button(
-            306,
-            btn_y,
-            80,
-            btn_h,
-            "Ayuda [H]",
-            on_click=self._show_hint,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_exit = Button(
-            390,
-            btn_y,
-            72,
-            btn_h,
-            "Salir [ESC]",
-            on_click=self._exit_board,
-            theme=NOIR_BUTTON_THEME,
-        )
-
-        self.action_bar.add_child(self.btn_details)
-        self.action_bar.add_child(self.btn_thread)
-        self.action_bar.add_child(self.btn_deduce)
-        self.action_bar.add_child(self.btn_hint)
-        self.action_bar.add_child(self.btn_exit)
-
-        # 3. Root Main Container coordinating Grid and Action Bar
-        self.root = CorkboardMainContainer(self.card_grid, self.action_bar)
-
-        # Main Corkboard Background Panel
-        self.board_panel = Panel(
-            6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12, theme=NOIR_CORK_THEME
-        )
-        self.root.add_child(self.board_panel)
+        bar_h = 29
 
         # Header Bar
-        header_text = f"PIZARRA DE INVESTIGACIÓN — VISITA {self.visit}"
+        header_text = f"PIZARRA DE INVESTIGACIÓN"
         self.header_label = Label(
             16,
             10,
@@ -177,7 +119,7 @@ class CorkboardState(BaseState):
             color=pygame.Color(45, 30, 18),
             theme=NOIR_CORK_THEME,
         )
-        self.root.add_child(self.header_label)
+        self.card_grid.add_child(self.header_label)
 
         counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
         self.counter_label = Label(
@@ -188,10 +130,7 @@ class CorkboardState(BaseState):
             color=pygame.Color(65, 45, 28),
             theme=NOIR_CORK_THEME,
         )
-        self.root.add_child(self.counter_label)
-
-        # Add Card Grid
-        self.root.add_child(self.card_grid)
+        self.card_grid.add_child(self.counter_label)
 
         # Sidebar: Open Questions Window (Dudas Abiertas)
         sidebar_x = 328
@@ -229,32 +168,30 @@ class CorkboardState(BaseState):
             theme=theme_q,
         )
         self.sidebar_win.add_child(self.sidebar_tb)
-        self.root.add_child(self.sidebar_win)
+        self.card_grid.add_child(self.sidebar_win)
 
-        # Bottom Panel and Action Bar
+        # Bottom Panel
         self.action_panel = Panel(bar_x, bar_y, bar_w, bar_h, theme=NOIR_SIDEBAR_THEME)
-        self.root.add_child(self.action_panel)
-        self.root.add_child(self.action_bar)
+        self.card_grid.add_child(self.action_panel)
 
         # Help hint line under the buttons
         self.bar_hint_label = Label(
             20,
-            bar_y + 34,
+            bar_y + 6,
             "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  Clic: Seleccionar",
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=NOIR_SIDEBAR_THEME,
         )
-        self.root.add_child(self.bar_hint_label)
+        self.card_grid.add_child(self.bar_hint_label)
 
         # Initial focus on first card
         if self.card_buttons:
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
-        # Gale UIManager
+        # Gale UIManager initialized directly with CardGridContainer
         self.ui = UIManager(
-            self.root,
+            self.card_grid,
             virtual_width=settings.VIRTUAL_WIDTH,
             window_width=settings.WINDOW_WIDTH,
             virtual_height=settings.VIRTUAL_HEIGHT,
@@ -325,7 +262,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 24,
             meta_str,
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -337,7 +274,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 40,
             kw_str,
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=COLOR_ACCENT_RED,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -345,7 +282,7 @@ class CorkboardState(BaseState):
 
         # Row 3: Full Description (Word-wrapped TextBox inside Panel)
         desc_theme = Theme(
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             text_color=pygame.Color(235, 228, 215),
             background_color=NOIR_SIDEBAR_THEME.background_color,
             border_color=NOIR_SIDEBAR_THEME.background_color,
@@ -426,7 +363,6 @@ class CorkboardState(BaseState):
             self.details_active = False
 
             # Restore focus to card grid
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
     # ── Modal de Deducciones y Consejos ──────────────────────────────────────
@@ -453,7 +389,7 @@ class CorkboardState(BaseState):
         )
 
         theme_text = Theme(
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             text_color=COLOR_SUCCESS if is_success else pygame.Color(235, 228, 215),
             background_color=NOIR_DIALOGUE_THEME.background_color,
             border_color=NOIR_DIALOGUE_THEME.background_color,
@@ -499,7 +435,6 @@ class CorkboardState(BaseState):
             self.modal_active = False
 
             # Restore focus to card grid
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
     # ── Mecánica de Hilo Rojo y Deducciones ──────────────────────────────────
@@ -630,19 +565,11 @@ class CorkboardState(BaseState):
 
         # Handle ENTER / confirm:
         if input_id in ("enter", "confirm"):
-            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-                self.action_bar.on_confirm()
-                return
-            # On card grid, ENTER attempts deduction
             self._attempt_deduction()
             return
 
         # Handle SPACE / interact:
         if input_id == "interact":
-            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-                self.action_bar.on_confirm()
-                return
-            # On card grid, SPACE toggles thread on focused card
             card_btn = self.card_grid.get_focused_card_button()
             if card_btn:
                 self._toggle_thread(card_btn.card_data["id"])

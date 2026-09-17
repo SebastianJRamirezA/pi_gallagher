@@ -122,7 +122,7 @@ class DialogueState(BaseState):
             win_x + win_w - 120,
             win_y + win_h - 14,
             text="",
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=pygame.Color(160, 150, 135),
             theme=NOIR_DIALOGUE_THEME,
         )

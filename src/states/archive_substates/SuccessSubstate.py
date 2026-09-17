@@ -71,7 +71,7 @@ class SuccessSubstate(BaseState):
             render_text(
                 surface,
                 f"[{clue['id']}] {clue['titulo']}",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.x + 10,
                 y + 2,
                 COLORS["brass"],
@@ -80,7 +80,7 @@ class SuccessSubstate(BaseState):
             render_text(
                 surface,
                 f"Claves: {keywords_text}",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.x + 10,
                 y + 20,
                 COLORS["highlight"],
@@ -95,7 +95,7 @@ class SuccessSubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     settings.VIRTUAL_WIDTH // 2,
                     y,
                     COLORS["paper"],

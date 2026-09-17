@@ -61,7 +61,7 @@ class IntroSubstate(BaseState):
         render_text(
             surface,
             "ARCHIVO DE LA COMISARÍA",
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             20,
             COLORS["brass"],
@@ -73,7 +73,7 @@ class IntroSubstate(BaseState):
         render_text(
             surface,
             "— Sótano —",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             42,
             COLORS["muted"],
@@ -90,7 +90,7 @@ class IntroSubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     40,
                     y,
                     COLORS["paper"],
@@ -102,7 +102,7 @@ class IntroSubstate(BaseState):
             render_text(
                 surface,
                 "ESPACIO para continuar",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 settings.VIRTUAL_WIDTH // 2,
                 240,
                 COLORS["muted"],
