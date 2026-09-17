@@ -101,7 +101,7 @@ TILESETS = {
 }
 
 FONTS = {
-    "small": pygame.font.Font(None, 18),
+    "small": pygame.font.Font(None, 16),
     "medium": pygame.font.Font(None, 26),
     "large": pygame.font.Font(None, 42),
 }
