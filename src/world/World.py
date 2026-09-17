@@ -13,6 +13,7 @@ from gale.camera import Camera
 from gale.state import StateStack
 from gale.text import render_text
 
+from gale.ui import Label, Panel
 import settings
 from src.data.dialogues import DIALOGUES
 from src.entity.Actor import NPC, Player
@@ -22,6 +23,7 @@ from src.states.PoliceArchiveState import PoliceArchiveState
 from src.states.SafeCrackerState import SafeCrackerState
 from src.states.StealthMinigameState import StealthMinigameState
 from src.story.StoryManager import StoryManager
+from src.ui.theme import NOIR_PROMPT_THEME
 from src.world.Region import Region
 from src.world.Trigger import Trigger
 
@@ -411,7 +413,7 @@ class World:
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         self.player.on_input(input_id, input_data)
-        if input_id in ("interact", "enter") and input_data.pressed:
+        if input_id in ("interact", "enter") and getattr(input_data, "pressed", False):
             self._try_interact()
 
     def _try_interact(self) -> None:
@@ -550,10 +552,18 @@ class World:
         self.player.render(surface, self.camera)
 
         # Region label in top-left
-        label = settings.FONTS["small"].render(
-            self.current_region_name.upper(), True, (218, 214, 198)
+        reg_text = self.current_region_name.upper()
+        rw, rh = settings.FONTS["small"].size(reg_text)
+        reg_panel = Panel(10, 8, rw + 14, rh + 6, theme=NOIR_PROMPT_THEME)
+        reg_panel.render(surface)
+        reg_label = Label(
+            17,
+            11,
+            reg_text,
+            font=settings.FONTS["small"],
+            theme=NOIR_PROMPT_THEME,
         )
-        surface.blit(label, (12, 10))
+        reg_label.render(surface)
 
         # Floating Interaction Prompt badge
         if self.active_prompt:
@@ -563,18 +573,17 @@ class World:
             badge_x = settings.VIRTUAL_WIDTH // 2 - badge_w // 2
             badge_y = settings.VIRTUAL_HEIGHT - 34
 
-            badge_rect = pygame.Rect(badge_x, badge_y, badge_w, badge_h)
-            pygame.draw.rect(surface, (28, 24, 22), badge_rect, border_radius=3)
-            pygame.draw.rect(surface, (175, 140, 65), badge_rect, 1, border_radius=3)
-            render_text(
-                surface,
+            prompt_panel = Panel(badge_x, badge_y, badge_w, badge_h, theme=NOIR_PROMPT_THEME)
+            prompt_panel.render(surface)
+            prompt_label = Label(
+                settings.VIRTUAL_WIDTH // 2,
+                badge_y + 4,
                 self.active_prompt,
-                settings.FONTS["small"],
-                badge_rect.centerx,
-                badge_rect.y + 4,
-                (235, 225, 205),
+                font=settings.FONTS["small"],
                 center=True,
+                theme=NOIR_PROMPT_THEME,
             )
+            prompt_label.render(surface)
 
         # Floating Notification Banners (at top center)
         if self.story.notifications:
@@ -585,15 +594,14 @@ class World:
             banner_x = settings.VIRTUAL_WIDTH // 2 - banner_w // 2
             banner_y = 10
 
-            banner_rect = pygame.Rect(banner_x, banner_y, banner_w, banner_h)
-            pygame.draw.rect(surface, (25, 20, 18), banner_rect, border_radius=3)
-            pygame.draw.rect(surface, (190, 150, 70), banner_rect, 1, border_radius=3)
-            render_text(
-                surface,
+            notif_panel = Panel(banner_x, banner_y, banner_w, banner_h, theme=NOIR_PROMPT_THEME)
+            notif_panel.render(surface)
+            notif_label = Label(
+                settings.VIRTUAL_WIDTH // 2,
+                banner_y + 4,
                 notif["text"],
-                settings.FONTS["small"],
-                banner_rect.centerx,
-                banner_rect.y + 4,
-                (245, 235, 210),
+                font=settings.FONTS["small"],
                 center=True,
+                theme=NOIR_PROMPT_THEME,
             )
+            notif_label.render(surface)
