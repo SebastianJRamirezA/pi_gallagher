@@ -122,7 +122,6 @@ class StealthMinigameState(BaseState):
         self.goal = pygame.Rect(self.world_width - 40, self.world_height - 30, 30, 20)
 
         self.detected_timer: float = 0.0
-        self.completed: bool = False
 
         self._build_obstacles()
         self._build_guards()
@@ -203,13 +202,10 @@ class StealthMinigameState(BaseState):
         ]
 
     def update(self, dt: float) -> None:
-        if getattr(self, "completed", False):
-            return
         self._update_player(dt)
         self._update_guards(dt)
         self._check_detection()
-        if self._check_goal():
-            return
+        self._check_goal()
         self._update_camera(dt)
 
         if self.detected_timer > 0:
@@ -324,26 +320,16 @@ class StealthMinigameState(BaseState):
             self._reset_player()
             break
 
-    def _check_goal(self) -> bool:
-        if getattr(self, "completed", False):
-            return True
+    def _check_goal(self) -> None:
         if self.player.colliderect(self.goal):
-            self.completed = True
             print("¡Objetivo alcanzado! El detective ha cruzado sin ser visto.")
-            from src.story.StoryManager import StoryManager
-            story = StoryManager.get_instance()
-            for c in ("C09", "C11"):
-                story.add_card(c)
-            story.flags["stealth_completed"] = True
-            if hasattr(self.state_machine, "states") and self.state_machine.states:
-                for state in reversed(self.state_machine.states):
-                    world = getattr(state, "world", None)
-                    if world is not None and hasattr(world, "player"):
-                        world.player.y = max(world.player.y, 52)
-                        break
+            # self._reactivate_door()
             self.state_machine.pop()
-            return True
-        return False
+
+    def _reactivate_door(self) -> None:
+        door = getattr(self, "door", None)
+        if door is not None and hasattr(door, "active"):
+            door.active = True
 
     def _reset_player(self) -> None:
         self.player.x = self.player_spawn[0]

@@ -104,7 +104,7 @@ class PhaseBSubstate(BaseState):
 
         # Document view overlay
         if self.viewing_doc:
-            if input_id == "interact":
+            if input_id == "confirm":
                 doc = self.current_doc
                 clue_id = doc.get("clue_id")
                 # Collect clue if relevant and not yet collected
@@ -138,7 +138,7 @@ class PhaseBSubstate(BaseState):
             next_idx = self.selected_doc + self.DOC_COLS
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
-        elif input_id == "interact":
+        elif input_id == "confirm":
             self._examine_document()
 
     def _examine_document(self):

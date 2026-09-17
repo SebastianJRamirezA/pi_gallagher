@@ -47,7 +47,7 @@ class IntroSubstate(BaseState):
                 self.finished_typing = True
 
     def on_input(self, input_id, input_data):
-        if input_id == "interact" and input_data.pressed:
+        if input_id == "confirm" and input_data.pressed:
             if not self.finished_typing:
                 self.char_index = self.total_chars
                 self.finished_typing = True

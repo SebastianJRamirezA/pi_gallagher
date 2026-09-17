@@ -23,6 +23,8 @@ class PlayState(BaseState):
 
     def render(self, surface: pygame.Surface) -> None:
         self.world.render(surface)
+        label = settings.FONTS["small"].render(self.world.current_region_name.upper(), True, (255, 255, 255))
+        surface.blit(label, (8, 8))
 
 
 from src.states.PauseMenuState import PauseMenuState
