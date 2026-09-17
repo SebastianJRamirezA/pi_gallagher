@@ -3,7 +3,7 @@ P.I. Gallagher: The Missing Art
 
 CorkboardState — Central investigative corkboard built entirely on gale.ui.
 Features 2D grid navigation across clue cards, seamless focus transition to bottom
-action buttons, mouse click and motion support, a dedicated full-screen Card Details
+action buttons and motion support, a dedicated full-screen Card Details
 overlay, and modal dialogs for deductions and Lauren's hints.
 """
 
@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 
 import pygame
 
-from gale.input_handler import InputData, KeyboardData, MouseClickData, MouseMotionData
+from gale.input_handler import InputData, KeyboardData
 from gale.state import BaseState
 from gale.ui import Button, Label, Panel, TextBox, Theme, UIManager, Window
 
@@ -178,7 +178,7 @@ class CorkboardState(BaseState):
         self.bar_hint_label = Label(
             20,
             bar_y + 6,
-            "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  Clic: Seleccionar",
+            "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda |  ESC: Salir",
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=NOIR_SIDEBAR_THEME,
@@ -532,19 +532,11 @@ class CorkboardState(BaseState):
                 self._update_details_thread_button()
                 return
 
-            # Forward mouse events to modal overlay
-            if isinstance(input_data, MouseMotionData):
-                self.modal_overlay.on_mouse_motion(self.ui._rescale(input_data.position))
-            elif isinstance(input_data, MouseClickData):
-                self.modal_overlay.on_mouse_click(
-                    self.ui._rescale(input_data.position), input_data
-                )
-            else:
-                if input_id in ("interact", "enter", "confirm"):
-                    self.modal_overlay.on_confirm()
-                elif input_id in self.ui.navigate_actions:
-                    self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
-            return
+            if input_id in ("interact", "enter", "confirm"):
+                self.modal_overlay.on_confirm()
+            elif input_id in self.ui.navigate_actions:
+                self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
+                return
 
         # 2. Main corkboard screen shortcuts:
         if input_id == "quit":
@@ -575,7 +567,6 @@ class CorkboardState(BaseState):
                 self._toggle_thread(card_btn.card_data["id"])
             return
 
-        # Forward navigation, mouse motion, and mouse clicks to UIManager
         self.ui.on_input(input_id, input_data)
 
     def render(self, surface: pygame.Surface) -> None:

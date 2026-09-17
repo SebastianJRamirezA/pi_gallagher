@@ -1,10 +1,6 @@
 """
 P.I. Gallagher: The Missing Art
 
-CorkboardState — Central investigative corkboard built entirely on gale.ui.
-Features 2D grid navigation across clue cards, seamless focus transition to bottom
-action buttons, mouse click and motion support, a dedicated full-screen Card Details
-overlay, and modal dialogs for deductions and Lauren's hints.
 """
 
 from typing import Any, Callable, Dict, List, Optional, Tuple

@@ -32,10 +32,6 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "rotate_left
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
 
-# Mouse input bindings for gale.ui
-input_handler.InputHandler.set_mouse_click_action(input_handler.MOUSE_BUTTON_1, "click")
-input_handler.InputHandler.set_mouse_motion_action(None, "motion")
-
 TITLE = "P.I. Gallagher: The Missing Art"
 
 # Size of our actual window. The original creates a plain 320x200

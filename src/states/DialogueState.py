@@ -131,7 +131,7 @@ class DialogueState(BaseState):
 
         self.root.add_child(self.window)
 
-        # UIManager to route mouse clicks and keyboard actions
+        # UIManager to route keyboard actions
         self.ui = UIManager(
             self.root,
             virtual_width=settings.VIRTUAL_WIDTH,
