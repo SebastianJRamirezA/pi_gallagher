@@ -14,6 +14,7 @@ from gale.state import BaseState
 from gale.ui import Container, Label, TextBox, Theme, UIManager, Window
 
 import settings
+from src.text_utils import wrap_text
 from src.ui.theme import NOIR_DIALOGUE_THEME
 
 
@@ -61,9 +62,11 @@ class DialogueTextBox(TextBox):
 
         font = self._font if self._font is not None else self.theme.font
         all_pages: List[List[str]] = []
+        max_w = self.rect.width - (self.theme.padding * 2)
 
         for p in self.raw_pages:
-            wrapped = self._wrap(p, font)
+            # Shared helper function from text_utils.py
+            wrapped = wrap_text(font, p, max_w)
             for i in range(0, len(wrapped), self.lines_per_page):
                 all_pages.append(wrapped[i : i + self.lines_per_page])
 
@@ -122,7 +125,7 @@ class DialogueState(BaseState):
             win_x + win_w - 120,
             win_y + win_h - 14,
             text="",
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=pygame.Color(160, 150, 135),
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -131,14 +134,14 @@ class DialogueState(BaseState):
 
         self.root.add_child(self.window)
 
-        # UIManager to route mouse clicks and keyboard actions
+        # UIManager to route keyboard actions
         self.ui = UIManager(
             self.root,
             virtual_width=settings.VIRTUAL_WIDTH,
             window_width=settings.WINDOW_WIDTH,
             virtual_height=settings.VIRTUAL_HEIGHT,
             window_height=settings.WINDOW_HEIGHT,
-            confirm_action="confirm",
+            confirm_action="space",
         )
 
     def _update_hint_text(self) -> None:
@@ -164,7 +167,7 @@ class DialogueState(BaseState):
         if isinstance(input_data, KeyboardData) and not input_data.pressed:
             return
 
-        if input_id in ("interact", "enter", "confirm"):
+        if input_id in ("space", "enter"):
             self.textbox.advance()
             return
 

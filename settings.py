@@ -19,22 +19,14 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LEFT, "move_lef
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "move_right")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "move_up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "move_down")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "interact")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_e, "interact")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "space")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_c, "confirm")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "details")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_i, "details")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_h, "hint")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p, "pause")
-input_handler.InputHandler.set_keyboard_action(input_handler.KEY_a, "rotate_left")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")
-
-# Mouse input bindings for gale.ui
-input_handler.InputHandler.set_mouse_click_action(input_handler.MOUSE_BUTTON_1, "click")
-input_handler.InputHandler.set_mouse_motion_action(None, "motion")
 
 TITLE = "P.I. Gallagher: The Missing Art"
 
@@ -101,9 +93,10 @@ TILESETS = {
 }
 
 FONTS = {
-    "small": pygame.font.Font(None, 18),
-    "medium": pygame.font.Font(None, 26),
-    "large": pygame.font.Font(None, 42),
+    "small": pygame.font.Font(None, 14),
+    "medium": pygame.font.Font(None, 18),
+    "large": pygame.font.Font(None, 26),
+    "xlarge": pygame.font.Font(None, 42),
 }
 
 SOUNDS = {
