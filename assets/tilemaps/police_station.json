@@ -56,7 +56,7 @@
             1373, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1374, 1375],
          "height":20,
          "id":1,
-         "name":"Tile Layer 1",
+         "name":"Walls",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
@@ -101,16 +101,28 @@
          "name":"Doors",
          "objects":[
                 {
-                 "height":12.6742712294043,
+                 "height":12.6743,
                  "id":1,
                  "name":"exit",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":41.0049951539551,
-                 "x":218.817565048833,
-                 "y":266.905241183926
+                 "width":41.005,
+                 "x":218.818,
+                 "y":266.905
+                }, 
+                {
+                 "height":25.3485,
+                 "id":3,
+                 "name":"archive",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":59.6436,
+                 "x":363.081,
+                 "y":75.3001
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -150,7 +162,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":2,
+ "nextobjectid":4,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2-2-geb83ddb9",
