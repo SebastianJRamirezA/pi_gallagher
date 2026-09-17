@@ -159,11 +159,6 @@ class SafeCrackerState(BaseState):
         else:
             self.message = "That is not the number. Move closer and listen."
 
-    def _reactivate_door(self) -> None:
-        door = getattr(self, "door", None)
-        if door is not None and hasattr(door, "active"):
-            door.active = True
-
     def render(self, surface: pygame.Surface) -> None:
         surface.fill(self.COLOR_BACKGROUND)
         center = (settings.VIRTUAL_WIDTH // 2, 134)

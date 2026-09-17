@@ -99,7 +99,6 @@ class Region:
 
         # Return (x, y) sprite origin corresponding to foot tile collision box
         return col * settings.TILE_SIZE, row * settings.TILE_SIZE
-        return self.is_walkable(rect)
 
     def _edge_tile(self, side: str) -> tuple[int, int]:
         candidates = [
@@ -117,19 +116,6 @@ class Region:
         if side == "office":
             return min(candidates, key=lambda tile: (tile[0], abs(tile[1] - center_row)))
         return max(candidates, key=lambda tile: (tile[0], -abs(tile[1] - center_row)))
-
-
-    def at_entry(self, player_rect: pygame.Rect, side: str) -> bool:
-        col, row = self._edge_tile(side)
-        player_col = player_rect.centerx // settings.TILE_SIZE
-        player_row = player_rect.centery // settings.TILE_SIZE
-        if side == "museum":
-            return player_row <= row + 1
-        if side == "south":
-            return player_row >= row - 1
-        if side == "office":
-            return player_col <= col + 1
-        return player_col >= col - 1
 
     def render(self, surface: pygame.Surface, camera=None) -> None:
         surface.fill((25, 25, 28))

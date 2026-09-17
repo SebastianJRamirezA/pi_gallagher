@@ -345,11 +345,6 @@ class StealthMinigameState(BaseState):
             return True
         return False
 
-    def _reactivate_door(self) -> None:
-        door = getattr(self, "door", None)
-        if door is not None and hasattr(door, "active"):
-            door.active = True
-
     def _reset_player(self) -> None:
         self.player.x = self.player_spawn[0]
         self.player.y = self.player_spawn[1]

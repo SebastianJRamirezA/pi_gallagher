@@ -29,23 +29,6 @@ from src.world.Trigger import Trigger
 class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
-    MINIGAME_STATES = {
-        "stealth": StealthMinigameState,
-        "archive": PoliceArchiveState,
-        "safecracker": SafeCrackerState,
-    }
-
-    def _minigame_for_door(self, door):
-        name = str(getattr(door, "name", "") or "").strip().lower()
-        return self.MINIGAME_STATES.get(name)
-
-    @staticmethod
-    def _door_is_active(door) -> bool:
-        return bool(getattr(door, "active", True))
-
-    @staticmethod
-    def _set_door_active(door, active: bool) -> None:
-        setattr(door, "active", bool(active))
 
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
