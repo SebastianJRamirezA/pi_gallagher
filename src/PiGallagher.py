@@ -15,9 +15,6 @@ from gale.game import Game
 from gale.input_handler import InputData
 from gale.text import render_text
 from gale.state import StateStack
-from src.states.StealthMinigameState import StealthMinigameState
-from src.states.SafeCrackerState import SafeCrackerState
-from src.states.PoliceArchiveState import PoliceArchiveState
 
 import settings
 from src.states.StartState import StartState
@@ -35,8 +32,4 @@ class PiGallagher(Game):
         self.state_stack.render(surface)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
-        if input_id == "quit" and input_data.pressed:
-            self.quit()
-            return
-
         self.state_stack.on_input(input_id, input_data)

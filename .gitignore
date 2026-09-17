@@ -1,5 +1,6 @@
 specifications/
 minigame_specification.md
+specification.md
 # Tiled temp files
 *.tiled-project
 *.tiled-session

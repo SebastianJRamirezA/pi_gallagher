@@ -23,6 +23,11 @@ class SuccessSubstate(BaseState):
 
     def enter(self, **kwargs):
         self.alpha = 0.0
+        from src.story.StoryManager import StoryManager
+        story = StoryManager.get_instance()
+        for c in ("C02", "C03", "C12"):
+            story.add_card(c)
+        story.flags["archive_completed"] = True
 
     def update(self, dt):
         if self.alpha < 255:

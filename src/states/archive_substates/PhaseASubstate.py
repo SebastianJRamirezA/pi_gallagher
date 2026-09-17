@@ -79,7 +79,7 @@ class PhaseASubstate(BaseState):
         elif input_id == "move_down":
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(max_d, self.selected_drawer + 1)
-        elif input_id == "confirm":
+        elif input_id == "interact":
             self._open_drawer()
 
     def _open_drawer(self):

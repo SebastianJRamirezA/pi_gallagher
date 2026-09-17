@@ -145,6 +145,11 @@ class SafeCrackerState(BaseState):
             if self.stage == len(self.COMBINATION):
                 self.complete = True
                 Timer.clear()
+                from src.story.StoryManager import StoryManager
+                story = StoryManager.get_instance()
+                for c in ("C15", "C16", "C17"):
+                    story.add_card(c)
+                story.flags["safecracker_completed"] = True
                 self.message = "The tumblers fall. The safe is open."
                 self.state_machine.pop()
             else:
@@ -153,11 +158,6 @@ class SafeCrackerState(BaseState):
                 self.message = "Good. The next tumbler is listening."
         else:
             self.message = "That is not the number. Move closer and listen."
-
-    def _reactivate_door(self) -> None:
-        door = getattr(self, "door", None)
-        if door is not None and hasattr(door, "active"):
-            door.active = True
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill(self.COLOR_BACKGROUND)
@@ -202,9 +202,9 @@ class SafeCrackerState(BaseState):
             self.quit()
         elif input_id in ("rotate_left", "move_left"):
             self.turning = -1 if not input_data.released else 0
-        elif input_id in ("rotate_right", "move_right"):
+        elif input_id in ("rotate_right", "move_right", "details"):
             self.turning = 1 if not input_data.released else 0
         elif input_id == "fine":
             self.fine_control = not input_data.released
-        elif input_id == "confirm" and input_data.pressed:
+        elif input_id in ("confirm", "interact", "enter") and input_data.pressed:
             self._confirm()
