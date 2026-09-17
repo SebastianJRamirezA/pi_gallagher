@@ -98,13 +98,13 @@ class PhaseBSubstate(BaseState):
 
         # Intro screen — skip with confirm
         if self.show_intro:
-            if input_id == "confirm":
+            if input_id == "space":
                 self._start_clock()
             return
 
         # Document view overlay
         if self.viewing_doc:
-            if input_id == "confirm":
+            if input_id == "space":
                 doc = self.current_doc
                 clue_id = doc.get("clue_id")
                 # Collect clue if relevant and not yet collected
@@ -138,7 +138,7 @@ class PhaseBSubstate(BaseState):
             next_idx = self.selected_doc + self.DOC_COLS
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
-        elif input_id == "confirm":
+        elif input_id == "space":
             self._examine_document()
 
     def _examine_document(self):
@@ -188,7 +188,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             "Flechas: Seleccionar   ESPACIO: Examinar",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             min(hint_y, 250),
             COLORS["muted"],
@@ -217,7 +217,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             "Exp. #12-03-MR",
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             60,
             COLORS["brass"],
@@ -240,7 +240,7 @@ class PhaseBSubstate(BaseState):
             render_text(
                 surface,
                 line,
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.centerx,
                 y,
                 COLORS["ink"],
@@ -251,7 +251,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             "Lauren lleva el expediente a la mesa...",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             195,
             COLORS["paper"],
@@ -260,7 +260,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             "ESPACIO para continuar",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             230,
             COLORS["muted"],
@@ -272,7 +272,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             "Exp. #12-03-MR",
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             12,
             5,
             COLORS["brass"],
@@ -286,7 +286,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             f"Pistas: {collected}/{len(REQUIRED_CLUES)}",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             12,
             28,
             clue_color,
@@ -297,11 +297,11 @@ class PhaseBSubstate(BaseState):
         seconds = int(self.time_remaining) % 60
         time_color = COLORS["danger"] if self.time_remaining <= 15 else COLORS["text"]
         time_str = f"{minutes}:{seconds:02d}"
-        tw = settings.FONTS["small"].size(time_str)[0]
+        tw = settings.FONTS["medium"].size(time_str)[0]
         render_text(
             surface,
             time_str,
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH - tw - 48,
             5,
             time_color,
@@ -380,7 +380,7 @@ class PhaseBSubstate(BaseState):
             line2 = ""
             for word in words:
                 test = line1 + (" " if line1 else "") + word
-                if settings.FONTS["small"].size(test)[0] <= rect.width - 12:
+                if settings.FONTS["medium"].size(test)[0] <= rect.width - 12:
                     line1 = test
                 else:
                     line2 += (" " if line2 else "") + word
@@ -388,7 +388,7 @@ class PhaseBSubstate(BaseState):
             render_text(
                 surface,
                 line1,
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 rect.x + 6,
                 rect.y + 8,
                 title_color,
@@ -397,7 +397,7 @@ class PhaseBSubstate(BaseState):
                 render_text(
                     surface,
                     line2,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     rect.x + 6,
                     rect.y + 24,
                     title_color,
@@ -408,7 +408,7 @@ class PhaseBSubstate(BaseState):
                 render_text(
                     surface,
                     "[OBTENIDA]",
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     rect.x + 6,
                     rect.y + rect.height - 18,
                     COLORS["success"],
@@ -417,7 +417,7 @@ class PhaseBSubstate(BaseState):
                 render_text(
                     surface,
                     "[leído]",
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     rect.x + 6,
                     rect.y + rect.height - 18,
                     COLORS["text_dark"],
@@ -444,7 +444,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             doc["title"],
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             doc_rect.centerx,
             dy + 10,
             COLORS["ink"],
@@ -468,7 +468,7 @@ class PhaseBSubstate(BaseState):
                 render_keyword_line(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     dx + 15,
                     y,
                     COLORS["ink"],
@@ -493,7 +493,7 @@ class PhaseBSubstate(BaseState):
         render_text(
             surface,
             prompt,
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             doc_rect.centerx,
             doc_rect.bottom - 14,
             prompt_color,

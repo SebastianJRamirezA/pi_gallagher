@@ -78,7 +78,7 @@ class PauseMenuState(BaseState):
             self.state_machine.pop()
             return
 
-        if input_id == "interact":
+        if input_id == "space":
             # Space can also trigger confirm
             self.root.on_confirm()
             return

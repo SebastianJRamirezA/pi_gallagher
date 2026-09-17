@@ -34,7 +34,7 @@ class SuccessSubstate(BaseState):
             self.alpha = min(255, self.alpha + 150 * dt)
 
     def on_input(self, input_id, input_data):
-        if input_data.pressed and input_id in {"confirm", "enter", "interact"}:
+        if input_data.pressed and input_id in {"enter", "space"}:
             # if getattr(self.parent, "door", None) is not None:
             #     self.parent.door.active = True
             self.parent.state_machine.pop()
@@ -71,7 +71,7 @@ class SuccessSubstate(BaseState):
             render_text(
                 surface,
                 f"[{clue['id']}] {clue['titulo']}",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.x + 10,
                 y + 2,
                 COLORS["brass"],
@@ -80,7 +80,7 @@ class SuccessSubstate(BaseState):
             render_text(
                 surface,
                 f"Claves: {keywords_text}",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.x + 10,
                 y + 20,
                 COLORS["highlight"],
@@ -95,7 +95,7 @@ class SuccessSubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     settings.VIRTUAL_WIDTH // 2,
                     y,
                     COLORS["paper"],

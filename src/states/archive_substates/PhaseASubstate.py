@@ -55,7 +55,7 @@ class PhaseASubstate(BaseState):
 
         # Card overlay is open — close it and check win/fail
         if self.viewing_card:
-            if input_id == "confirm":
+            if input_id == "space":
                 self.viewing_card = False
                 self.current_card = None
                 if self.found_goal:
@@ -79,7 +79,7 @@ class PhaseASubstate(BaseState):
         elif input_id == "move_down":
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(max_d, self.selected_drawer + 1)
-        elif input_id == "confirm":
+        elif input_id == "space":
             self._open_drawer()
 
     def _open_drawer(self):
@@ -105,7 +105,7 @@ class PhaseASubstate(BaseState):
         render_text(
             surface,
             "MUEBLE FICHERO",
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             12,
             8,
             COLORS["brass"],
@@ -115,11 +115,11 @@ class PhaseASubstate(BaseState):
         # Drawer counter (right-aligned)
         remaining = MAX_DRAWERS - self.drawers_opened
         status = f"Cajones restantes: {remaining}/{MAX_DRAWERS}"
-        status_w = settings.FONTS["small"].size(status)[0]
+        status_w = settings.FONTS["medium"].size(status)[0]
         render_text(
             surface,
             status,
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH - status_w - 12,
             12,
             COLORS["danger"] if remaining <= 1 else COLORS["muted"],
@@ -138,7 +138,7 @@ class PhaseASubstate(BaseState):
             render_text(
                 surface,
                 cat_data["label"],
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 col_x + self.COL_WIDTH // 2,
                 self.HEADER_Y + 2,
                 COLORS["ink"] if is_selected_cat else COLORS["muted"],
@@ -181,7 +181,7 @@ class PhaseASubstate(BaseState):
                 render_text(
                     surface,
                     drawer["label"],
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     rect.x + 8,
                     rect.y + 6,
                     label_color,
@@ -192,7 +192,7 @@ class PhaseASubstate(BaseState):
                     render_text(
                         surface,
                         "ref.",
-                        settings.FONTS["small"],
+                        settings.FONTS["medium"],
                         rect.right - 28,
                         rect.y + 22,
                         COLORS["text_dark"],
@@ -203,7 +203,7 @@ class PhaseASubstate(BaseState):
                     render_text(
                         surface,
                         "[abierto]",
-                        settings.FONTS["small"],
+                        settings.FONTS["medium"],
                         rect.x + 8,
                         rect.y + 22,
                         COLORS["text_dark"],
@@ -213,7 +213,7 @@ class PhaseASubstate(BaseState):
         render_text(
             surface,
             "Flechas: Navegar   ESPACIO: Abrir cajón",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             252,
             COLORS["muted"],
@@ -243,7 +243,7 @@ class PhaseASubstate(BaseState):
         render_text(
             surface,
             "FICHA DE ÍNDICE",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             card_rect.centerx,
             cy + 8,
             COLORS["brass_dark"],
@@ -263,7 +263,7 @@ class PhaseASubstate(BaseState):
         render_text(
             surface,
             self.current_card["label"],
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             cx + 15,
             cy + 30,
             COLORS["ink"],
@@ -281,7 +281,7 @@ class PhaseASubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     cx + 15,
                     y,
                     color,
@@ -295,7 +295,7 @@ class PhaseASubstate(BaseState):
             render_text(
                 surface,
                 "EXPEDIENTE LOCALIZADO",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 card_rect.centerx,
                 card_rect.bottom - 32,
                 COLORS["success"],
@@ -304,7 +304,7 @@ class PhaseASubstate(BaseState):
         render_text(
             surface,
             "ESPACIO para continuar",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             card_rect.centerx,
             card_rect.bottom - 14,
             COLORS["muted"],

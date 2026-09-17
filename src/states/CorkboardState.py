@@ -3,19 +3,17 @@ P.I. Gallagher: The Missing Art
 
 CorkboardState — Central investigative corkboard built entirely on gale.ui.
 Features 2D grid navigation across clue cards, seamless focus transition to bottom
-action buttons, mouse click and motion support, a dedicated full-screen Card Details
+action buttons and motion support, a dedicated full-screen Card Details
 overlay, and modal dialogs for deductions and Lauren's hints.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import pygame
 
-from gale.input_handler import InputData, KeyboardData, MouseClickData, MouseMotionData
+from gale.input_handler import InputData, KeyboardData
 from gale.state import BaseState
-from gale.text import render_text
-from gale.ui import Button, Container, Label, Panel, TextBox, Theme, UIManager, Window
-from gale.ui.widget import Direction, Widget
+from gale.ui import Button, Label, Panel, TextBox, Theme, UIManager, Window
 
 import settings
 from src.data.cards import LAUREN_HINTS, OPEN_QUESTIONS
@@ -37,323 +35,7 @@ from src.ui.theme import (
     NOIR_SIDEBAR_THEME,
 )
 
-
-class CardButton(Button):
-    """
-    gale.ui.Button representing an individual clue card on the corkboard.
-    Displays ID, Title, primary keywords, pin indicator, and clear focus styling.
-    """
-
-    def __init__(
-        self,
-        x: float,
-        y: float,
-        width: float,
-        height: float,
-        card_data: Dict[str, Any],
-        on_toggle: Callable[[], None],
-        theme: Optional[Theme] = None,
-    ) -> None:
-        super().__init__(x, y, width, height, text="", on_click=on_toggle, theme=theme)
-        self.card_data = card_data
-        self.is_threaded: bool = False
-
-    @property
-    def pin_pos(self) -> Tuple[int, int]:
-        return int(self.x + self.width // 2), int(self.y + 3)
-
-    def render(self, surface: pygame.Surface) -> None:
-        if not self.visible:
-            return
-
-        # Background color
-        if self.is_threaded:
-            bg_color = COLOR_PAPER_THREADED
-        elif self.focused or self.hovered:
-            bg_color = COLOR_PAPER_SELECTED
-        else:
-            bg_color = COLOR_PAPER
-
-        pygame.draw.rect(surface, bg_color, self.rect, border_radius=3)
-
-        # Border outline: strong visual distinction for focused card
-        if self.focused:
-            pygame.draw.rect(surface, COLOR_BRASS_LIGHT, self.rect, 2, border_radius=3)
-        elif self.is_threaded:
-            pygame.draw.rect(surface, COLOR_ACCENT_RED, self.rect, 2, border_radius=3)
-        elif self.hovered:
-            pygame.draw.rect(surface, COLOR_BRASS, self.rect, 1, border_radius=3)
-        else:
-            pygame.draw.rect(surface, pygame.Color(140, 130, 115), self.rect, 1, border_radius=3)
-
-        # Thumbtack pin at top center
-        px, py = self.pin_pos
-        pin_color = COLOR_ACCENT_RED if self.is_threaded else pygame.Color(230, 175, 45)
-        pygame.draw.circle(surface, pin_color, (px, py), 3)
-        if self.is_threaded:
-            pygame.draw.circle(surface, pygame.Color(255, 140, 140), (px, py), 1)
-
-        # Card Title with cursor indicator when focused
-        cid = self.card_data["id"]
-        title = self.card_data["titulo"]
-        title_prefix = "> " if self.focused else ""
-        render_text(
-            surface,
-            f"{title_prefix}[{cid}] {title}",
-            settings.FONTS["small"],
-            self.x + 4,
-            self.y + 6,
-            COLOR_INK,
-        )
-
-        # Highlighted Keywords
-        kw_list = self.card_data.get("claves", [])
-        kw_str = kw_list[0] if kw_list else ""
-        if len(kw_list) > 1:
-            kw_str += f", {kw_list[1]}"
-
-        render_text(
-            surface,
-            kw_str,
-            settings.FONTS["small"],
-            self.x + 4,
-            self.y + 20,
-            COLOR_ACCENT_RED,
-        )
-
-        # Right-aligned details badge
-        render_text(
-            surface,
-            "[D: Ver]",
-            settings.FONTS["small"],
-            self.rect.right - 44,
-            self.y + 20,
-            COLOR_MUTED,
-        )
-
-
-class CardGridContainer(Container):
-    """
-    gale.ui.Container organizing CardButtons in a 2-column grid.
-    Supports clean 4-way arrow navigation and yields focus downwards on the bottom row.
-    """
-
-    def __init__(
-        self,
-        x: float,
-        y: float,
-        width: float,
-        height: float,
-        cols: int = 2,
-        **kwargs,
-    ) -> None:
-        super().__init__(x, y, width, height, **kwargs)
-        self.cols = cols
-        self.last_focused_index: int = 0
-
-    def get_focused_card_button(self) -> Optional[CardButton]:
-        for child in self.children:
-            if isinstance(child, CardButton) and child.focused:
-                return child
-        if self.children and isinstance(self.children[0], CardButton):
-            idx = max(0, min(self.last_focused_index, len(self.children) - 1))
-            return self.children[idx]  # type: ignore[return-value]
-        return None
-
-    def focus_saved_or_first(self) -> None:
-        focusable = self._focusable_children()
-        if not focusable:
-            return
-        idx = max(0, min(self.last_focused_index, len(focusable) - 1))
-        self._focus_only(focusable[idx])
-
-    def _move_focus(self, direction: Direction) -> bool:
-        focusable = self._focusable_children()
-        if not focusable:
-            return False
-
-        dx, dy = direction
-        current = self._focused_child()
-        current_index = focusable.index(current) if current in focusable else self.last_focused_index
-        total = len(focusable)
-
-        row = current_index // self.cols
-        col = current_index % self.cols
-
-        if dx != 0:
-            next_col = col + dx
-            next_idx = row * self.cols + next_col
-            if 0 <= next_col < self.cols and 0 <= next_idx < total:
-                self.last_focused_index = next_idx
-                self._focus_only(focusable[next_idx])
-                return True
-            return False
-        elif dy != 0:
-            next_row = row + dy
-            next_idx = next_row * self.cols + col
-            if 0 <= next_idx < total:
-                self.last_focused_index = next_idx
-                self._focus_only(focusable[next_idx])
-                return True
-            # When moving down past the bottom row, return False to let parent transfer focus to action bar
-            return False
-
-        return False
-
-
-class ActionBarContainer(Container):
-    """
-    gale.ui.Container organizing action buttons horizontally.
-    Supports left/right wrapping and yields focus upwards on UP arrow.
-    """
-
-    def __init__(self, x: float, y: float, width: float, height: float, **kwargs) -> None:
-        super().__init__(x, y, width, height, **kwargs)
-
-    def _move_focus(self, direction: Direction) -> bool:
-        focusable = self._focusable_children()
-        if not focusable:
-            return False
-
-        dx, dy = direction
-        if dy < 0:
-            # Pressing UP yields focus back to the card grid
-            return False
-
-        if dx != 0:
-            current = self._focused_child()
-            current_index = focusable.index(current) if current in focusable else 0
-            next_index = (current_index + dx) % len(focusable)
-            self._focus_only(focusable[next_index])
-            return True
-
-        return False
-
-
-class CorkboardMainContainer(Container):
-    """
-    Top-level UI Container coordinating the CardGridContainer and ActionBarContainer.
-    Dispatches 2D arrow navigation seamlessly between the grid and bottom buttons.
-    """
-
-    def __init__(
-        self,
-        card_grid: CardGridContainer,
-        action_bar: ActionBarContainer,
-        **kwargs,
-    ) -> None:
-        super().__init__(0, 0, settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT, **kwargs)
-        self.card_grid = card_grid
-        self.action_bar = action_bar
-
-    def on_navigate(self, direction: Direction) -> bool:
-        _, dy = direction
-
-        if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-            if self.action_bar.on_navigate(direction):
-                return True
-            if dy < 0:
-                # UP from action bar returns focus to card grid
-                self.action_bar.focused = False
-                for b in self.action_bar.children:
-                    b.focused = False
-                self._focus_only(self.card_grid)
-                self.card_grid.focus_saved_or_first()
-                return True
-            return False
-
-        # Card grid navigation
-        if self.card_grid.on_navigate(direction):
-            return True
-
-        if dy > 0:
-            # DOWN from bottom of card grid moves into action bar
-            self.card_grid.focused = False
-            for c in self.card_grid.children:
-                c.focused = False
-            self._focus_only(self.action_bar)
-            self.action_bar._focus_first()
-            return True
-
-        return False
-
-    def on_confirm(self) -> bool:
-        if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-            return self.action_bar.on_confirm()
-        return self.card_grid.on_confirm()
-
-    def on_mouse_click(self, position: Tuple[float, float], data: MouseClickData) -> bool:
-        if not self.enabled or not self.contains(position):
-            return False
-
-        for child in reversed(self.children):
-            if not child.visible or not child.enabled:
-                continue
-
-            if child.on_mouse_click(position, data):
-                if child is self.action_bar:
-                    self.card_grid.focused = False
-                    for c in self.card_grid.children:
-                        c.focused = False
-                    self._focus_only(self.action_bar)
-                elif child is self.card_grid:
-                    self.action_bar.focused = False
-                    for b in self.action_bar.children:
-                        b.focused = False
-                    self._focus_only(self.card_grid)
-                return True
-
-        return False
-
-
-class ModalOverlay(Container):
-    """
-    Full-screen modal container that isolates modal windows (details & dialogue).
-    Absorbs all mouse clicks and routes navigation exclusively to the modal.
-    """
-
-    def __init__(
-        self,
-        width: float,
-        height: float,
-        window: Window,
-        on_dismiss: Optional[Callable[[], None]] = None,
-    ) -> None:
-        super().__init__(0, 0, width, height)
-        self.window = window
-        self.on_dismiss = on_dismiss
-        self.add_child(window)
-        if window._focusable_children():
-            window._focus_first()
-        self.focused = True
-
-    def on_mouse_click(self, position: Tuple[float, float], data: MouseClickData) -> bool:
-        if self.window.contains(position):
-            return self.window.on_mouse_click(position, data)
-
-        # Clicking the backdrop outside the window closes the modal on release
-        if data.released and self.on_dismiss is not None:
-            self.on_dismiss()
-        return True
-
-    def on_mouse_motion(self, position: Tuple[float, float]) -> None:
-        self.window.on_mouse_motion(position)
-
-    def on_navigate(self, direction: Direction) -> bool:
-        return self.window.on_navigate(direction)
-
-    def on_confirm(self) -> bool:
-        return self.window.on_confirm()
-
-    def render(self, surface: pygame.Surface) -> None:
-        if not self.visible:
-            return
-
-        overlay = pygame.Surface((int(self.width), int(self.height)), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 160))
-        surface.blit(overlay, (0, 0))
-        self.window.render(surface)
-
+from src.ui import CardButton, CardGridContainer, ModalOverlay
 
 class CorkboardState(BaseState):
     def enter(self) -> None:
@@ -376,12 +58,17 @@ class CorkboardState(BaseState):
         self.cards = self.story.get_available_cards_for_corkboard()
         self.cards.sort(key=lambda c: c["id"])
 
-        # 1. Card Grid Container (2 columns of cards)
+        # 1. Main Corkboard Background Panel
+        self.board_panel = Panel(
+            6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12, theme=NOIR_CORK_THEME
+        )
+
+        # 2. Card Grid Container (2 columns of cards)
         self.card_buttons: List[CardButton] = []
         grid_x = 12
-        grid_y = 34
+        grid_y = 45
         card_w = 152
-        card_h = 36
+        card_h = 50
         gap_x = 8
         gap_y = 4
         cols = 2
@@ -389,6 +76,9 @@ class CorkboardState(BaseState):
         self.card_grid = CardGridContainer(
             grid_x, grid_y, (card_w + gap_x) * cols, (card_h + gap_y) * 4, cols=cols
         )
+
+        # Add background panel to grid FIRST so it renders behind card buttons
+        self.card_grid.add_child(self.board_panel)
 
         for i, card in enumerate(self.cards):
             row = i // cols
@@ -414,79 +104,13 @@ class CorkboardState(BaseState):
             self.card_buttons.append(btn)
             self.card_grid.add_child(btn)
 
-        # 2. Bottom Action Bar Container with 5 buttons
         bar_x = 12
-        bar_y = 200
+        bar_y = 229
         bar_w = 456
-        bar_h = 58
-        btn_y = bar_y + 6
-        btn_h = 22
-
-        self.action_bar = ActionBarContainer(bar_x, btn_y, bar_w, btn_h)
-
-        self.btn_details = Button(
-            18,
-            btn_y,
-            96,
-            btn_h,
-            "Detalles [D]",
-            on_click=self._open_focused_card_details,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_thread = Button(
-            118,
-            btn_y,
-            92,
-            btn_h,
-            "Hilo [ESPACIO]",
-            on_click=self._toggle_focused_card_thread,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_deduce = Button(
-            214,
-            btn_y,
-            88,
-            btn_h,
-            "Deducir [ENTER]",
-            on_click=self._attempt_deduction,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_hint = Button(
-            306,
-            btn_y,
-            80,
-            btn_h,
-            "Ayuda [H]",
-            on_click=self._show_hint,
-            theme=NOIR_BUTTON_THEME,
-        )
-        self.btn_exit = Button(
-            390,
-            btn_y,
-            72,
-            btn_h,
-            "Salir [ESC]",
-            on_click=self._exit_board,
-            theme=NOIR_BUTTON_THEME,
-        )
-
-        self.action_bar.add_child(self.btn_details)
-        self.action_bar.add_child(self.btn_thread)
-        self.action_bar.add_child(self.btn_deduce)
-        self.action_bar.add_child(self.btn_hint)
-        self.action_bar.add_child(self.btn_exit)
-
-        # 3. Root Main Container coordinating Grid and Action Bar
-        self.root = CorkboardMainContainer(self.card_grid, self.action_bar)
-
-        # Main Corkboard Background Panel
-        self.board_panel = Panel(
-            6, 6, settings.VIRTUAL_WIDTH - 12, settings.VIRTUAL_HEIGHT - 12, theme=NOIR_CORK_THEME
-        )
-        self.root.add_child(self.board_panel)
+        bar_h = 29
 
         # Header Bar
-        header_text = f"PIZARRA DE INVESTIGACIÓN — VISITA {self.visit}"
+        header_text = f"PIZARRA DE INVESTIGACIÓN"
         self.header_label = Label(
             16,
             10,
@@ -495,7 +119,7 @@ class CorkboardState(BaseState):
             color=pygame.Color(45, 30, 18),
             theme=NOIR_CORK_THEME,
         )
-        self.root.add_child(self.header_label)
+        self.card_grid.add_child(self.header_label)
 
         counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
         self.counter_label = Label(
@@ -506,16 +130,13 @@ class CorkboardState(BaseState):
             color=pygame.Color(65, 45, 28),
             theme=NOIR_CORK_THEME,
         )
-        self.root.add_child(self.counter_label)
-
-        # Add Card Grid
-        self.root.add_child(self.card_grid)
+        self.card_grid.add_child(self.counter_label)
 
         # Sidebar: Open Questions Window (Dudas Abiertas)
         sidebar_x = 328
         sidebar_y = 34
         sidebar_w = 140
-        sidebar_h = 156
+        sidebar_h = 190
 
         self.sidebar_win = Window(
             sidebar_x,
@@ -547,37 +168,35 @@ class CorkboardState(BaseState):
             theme=theme_q,
         )
         self.sidebar_win.add_child(self.sidebar_tb)
-        self.root.add_child(self.sidebar_win)
+        self.card_grid.add_child(self.sidebar_win)
 
-        # Bottom Panel and Action Bar
+        # Bottom Panel
         self.action_panel = Panel(bar_x, bar_y, bar_w, bar_h, theme=NOIR_SIDEBAR_THEME)
-        self.root.add_child(self.action_panel)
-        self.root.add_child(self.action_bar)
+        self.card_grid.add_child(self.action_panel)
 
         # Help hint line under the buttons
         self.bar_hint_label = Label(
             20,
-            bar_y + 34,
-            "Flechitas: Moverse  |  D: Detalles  |  ESPACIO: Hilo  |  ENTER: Deducir  |  Clic: Seleccionar",
+            bar_y + 6,
+            "Flechitas: Moverse  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda  |  ESC: Salir",
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=NOIR_SIDEBAR_THEME,
         )
-        self.root.add_child(self.bar_hint_label)
+        self.card_grid.add_child(self.bar_hint_label)
 
         # Initial focus on first card
         if self.card_buttons:
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
-        # Gale UIManager
+        # Gale UIManager initialized directly with CardGridContainer
         self.ui = UIManager(
-            self.root,
+            self.card_grid,
             virtual_width=settings.VIRTUAL_WIDTH,
             window_width=settings.WINDOW_WIDTH,
             virtual_height=settings.VIRTUAL_HEIGHT,
             window_height=settings.WINDOW_HEIGHT,
-            confirm_action="interact",
+            confirm_action="space",
             navigate_actions={
                 "move_up": (0, -1),
                 "move_down": (0, 1),
@@ -643,7 +262,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 24,
             meta_str,
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -655,7 +274,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 40,
             kw_str,
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             color=COLOR_ACCENT_RED,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -663,7 +282,7 @@ class CorkboardState(BaseState):
 
         # Row 3: Full Description (Word-wrapped TextBox inside Panel)
         desc_theme = Theme(
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             text_color=pygame.Color(235, 228, 215),
             background_color=NOIR_SIDEBAR_THEME.background_color,
             border_color=NOIR_SIDEBAR_THEME.background_color,
@@ -744,7 +363,6 @@ class CorkboardState(BaseState):
             self.details_active = False
 
             # Restore focus to card grid
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
     # ── Modal de Deducciones y Consejos ──────────────────────────────────────
@@ -771,7 +389,7 @@ class CorkboardState(BaseState):
         )
 
         theme_text = Theme(
-            font=settings.FONTS["small"],
+            font=settings.FONTS["medium"],
             text_color=COLOR_SUCCESS if is_success else pygame.Color(235, 228, 215),
             background_color=NOIR_DIALOGUE_THEME.background_color,
             border_color=NOIR_DIALOGUE_THEME.background_color,
@@ -817,7 +435,6 @@ class CorkboardState(BaseState):
             self.modal_active = False
 
             # Restore focus to card grid
-            self.root._focus_only(self.card_grid)
             self.card_grid.focus_saved_or_first()
 
     # ── Mecánica de Hilo Rojo y Deducciones ──────────────────────────────────
@@ -906,28 +523,20 @@ class CorkboardState(BaseState):
                 self._close_details()
                 return
 
-            if input_id in ("quit", "interact", "enter", "confirm") and self.modal_active:
+            if input_id in ("quit", "space", "enter") and self.modal_active:
                 self._close_modal()
                 return
 
-            if input_id in ("interact", "confirm") and self.details_active and self.details_card:
+            if input_id == "space" and self.details_active and self.details_card:
                 self._toggle_thread(self.details_card["id"])
                 self._update_details_thread_button()
                 return
 
-            # Forward mouse events to modal overlay
-            if isinstance(input_data, MouseMotionData):
-                self.modal_overlay.on_mouse_motion(self.ui._rescale(input_data.position))
-            elif isinstance(input_data, MouseClickData):
-                self.modal_overlay.on_mouse_click(
-                    self.ui._rescale(input_data.position), input_data
-                )
-            else:
-                if input_id in ("interact", "enter", "confirm"):
-                    self.modal_overlay.on_confirm()
-                elif input_id in self.ui.navigate_actions:
-                    self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
-            return
+            if input_id in ("space", "enter"):
+                self.modal_overlay.on_confirm()
+            elif input_id in self.ui.navigate_actions:
+                self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
+                return
 
         # 2. Main corkboard screen shortcuts:
         if input_id == "quit":
@@ -947,26 +556,17 @@ class CorkboardState(BaseState):
             return
 
         # Handle ENTER / confirm:
-        if input_id in ("enter", "confirm"):
-            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-                self.action_bar.on_confirm()
-                return
-            # On card grid, ENTER attempts deduction
+        if input_id == "enter":
             self._attempt_deduction()
             return
 
         # Handle SPACE / interact:
-        if input_id == "interact":
-            if self.action_bar.focused or any(b.focused for b in self.action_bar.children):
-                self.action_bar.on_confirm()
-                return
-            # On card grid, SPACE toggles thread on focused card
+        if input_id == "space":
             card_btn = self.card_grid.get_focused_card_button()
             if card_btn:
                 self._toggle_thread(card_btn.card_data["id"])
             return
 
-        # Forward navigation, mouse motion, and mouse clicks to UIManager
         self.ui.on_input(input_id, input_data)
 
     def render(self, surface: pygame.Surface) -> None:

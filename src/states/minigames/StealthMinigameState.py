@@ -320,7 +320,6 @@ class StealthMinigameState(BaseState):
                 continue
 
             # Detected!
-            print("¡Detective descubierto! Reiniciando posición...")
             self._reset_player()
             break
 
@@ -329,7 +328,6 @@ class StealthMinigameState(BaseState):
             return True
         if self.player.colliderect(self.goal):
             self.completed = True
-            print("¡Objetivo alcanzado! El detective ha cruzado sin ser visto.")
             from src.story.StoryManager import StoryManager
             story = StoryManager.get_instance()
             for c in ("C09", "C11"):

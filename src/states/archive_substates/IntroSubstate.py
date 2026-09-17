@@ -47,7 +47,7 @@ class IntroSubstate(BaseState):
                 self.finished_typing = True
 
     def on_input(self, input_id, input_data):
-        if input_id == "confirm" and input_data.pressed:
+        if input_id == "space" and input_data.pressed:
             if not self.finished_typing:
                 self.char_index = self.total_chars
                 self.finished_typing = True
@@ -61,7 +61,7 @@ class IntroSubstate(BaseState):
         render_text(
             surface,
             "ARCHIVO DE LA COMISARÍA",
-            settings.FONTS["medium"],
+            settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             20,
             COLORS["brass"],
@@ -73,7 +73,7 @@ class IntroSubstate(BaseState):
         render_text(
             surface,
             "— Sótano —",
-            settings.FONTS["small"],
+            settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             42,
             COLORS["muted"],
@@ -90,7 +90,7 @@ class IntroSubstate(BaseState):
                 render_text(
                     surface,
                     line,
-                    settings.FONTS["small"],
+                    settings.FONTS["medium"],
                     40,
                     y,
                     COLORS["paper"],
@@ -102,7 +102,7 @@ class IntroSubstate(BaseState):
             render_text(
                 surface,
                 "ESPACIO para continuar",
-                settings.FONTS["small"],
+                settings.FONTS["medium"],
                 settings.VIRTUAL_WIDTH // 2,
                 240,
                 COLORS["muted"],
