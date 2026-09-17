@@ -15,7 +15,7 @@ from gale.text import render_text
 
 import settings
 from src.data.dialogues import DIALOGUES
-from src.entity.Actor import NPC, Player
+from src.entity import NPC, Player
 from src.states.CorkboardState import CorkboardState
 from src.states.DialogueState import DialogueState
 from src.states.PoliceArchiveState import PoliceArchiveState
