@@ -138,7 +138,7 @@ class DialogueState(BaseState):
             window_width=settings.WINDOW_WIDTH,
             virtual_height=settings.VIRTUAL_HEIGHT,
             window_height=settings.WINDOW_HEIGHT,
-            confirm_action="confirm",
+            confirm_action="space",
         )
 
     def _update_hint_text(self) -> None:
@@ -164,7 +164,7 @@ class DialogueState(BaseState):
         if isinstance(input_data, KeyboardData) and not input_data.pressed:
             return
 
-        if input_id in ("interact", "enter", "confirm"):
+        if input_id in ("space", "enter"):
             self.textbox.advance()
             return
 

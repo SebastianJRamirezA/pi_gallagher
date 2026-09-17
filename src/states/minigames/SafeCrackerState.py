@@ -195,16 +195,16 @@ class SafeCrackerState(BaseState):
 
         render_text(surface, "TIME: " + str(self.timer), settings.FONTS["medium"], 345, 105, self.COLOR_MUTED)
 
-        render_text(surface, "A/D or arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["medium"], 30, 260, self.COLOR_MUTED)
+        render_text(surface, "arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["medium"], 30, 260, self.COLOR_MUTED)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:
             self.quit()
-        elif input_id in ("rotate_left", "move_left"):
+        elif input_id == "move_left":
             self.turning = -1 if not input_data.released else 0
-        elif input_id in ("rotate_right", "move_right", "details"):
+        elif input_id == "move_right":
             self.turning = 1 if not input_data.released else 0
         elif input_id == "fine":
             self.fine_control = not input_data.released
-        elif input_id in ("confirm", "interact", "enter") and input_data.pressed:
+        elif input_id in ("space", "enter") and input_data.pressed:
             self._confirm()

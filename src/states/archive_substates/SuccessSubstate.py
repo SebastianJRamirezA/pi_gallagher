@@ -34,7 +34,7 @@ class SuccessSubstate(BaseState):
             self.alpha = min(255, self.alpha + 150 * dt)
 
     def on_input(self, input_id, input_data):
-        if input_data.pressed and input_id in {"confirm", "enter", "interact"}:
+        if input_data.pressed and input_id in {"enter", "space"}:
             # if getattr(self.parent, "door", None) is not None:
             #     self.parent.door.active = True
             self.parent.state_machine.pop()

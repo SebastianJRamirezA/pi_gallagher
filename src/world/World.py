@@ -393,7 +393,7 @@ class World:
 
     def on_input(self, input_id: str, input_data: Any) -> None:
         self.player.on_input(input_id, input_data)
-        if input_id in ("interact", "enter") and getattr(input_data, "pressed", False):
+        if input_id in ("space", "enter") and getattr(input_data, "pressed", False):
             self._try_interact()
 
     def _try_interact(self) -> None:

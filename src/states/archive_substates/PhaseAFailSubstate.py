@@ -35,7 +35,7 @@ class PhaseAFailSubstate(BaseState):
                 self.can_continue = True
 
     def on_input(self, input_id, input_data):
-        if self.can_continue and input_id == "confirm" and input_data.pressed:
+        if self.can_continue and input_id == "space" and input_data.pressed:
             # if getattr(self.parent, "door", None) is not None:
             #     self.parent.door.active = True
             self.parent.state_machine.pop()

@@ -196,7 +196,7 @@ class CorkboardState(BaseState):
             window_width=settings.WINDOW_WIDTH,
             virtual_height=settings.VIRTUAL_HEIGHT,
             window_height=settings.WINDOW_HEIGHT,
-            confirm_action="interact",
+            confirm_action="space",
             navigate_actions={
                 "move_up": (0, -1),
                 "move_down": (0, 1),
@@ -523,16 +523,16 @@ class CorkboardState(BaseState):
                 self._close_details()
                 return
 
-            if input_id in ("quit", "interact", "enter", "confirm") and self.modal_active:
+            if input_id in ("quit", "space", "enter") and self.modal_active:
                 self._close_modal()
                 return
 
-            if input_id in ("interact", "confirm") and self.details_active and self.details_card:
+            if input_id == "space" and self.details_active and self.details_card:
                 self._toggle_thread(self.details_card["id"])
                 self._update_details_thread_button()
                 return
 
-            if input_id in ("interact", "enter", "confirm"):
+            if input_id in ("space", "enter"):
                 self.modal_overlay.on_confirm()
             elif input_id in self.ui.navigate_actions:
                 self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
@@ -556,12 +556,12 @@ class CorkboardState(BaseState):
             return
 
         # Handle ENTER / confirm:
-        if input_id in ("enter", "confirm"):
+        if input_id == "enter":
             self._attempt_deduction()
             return
 
         # Handle SPACE / interact:
-        if input_id == "interact":
+        if input_id == "space":
             card_btn = self.card_grid.get_focused_card_button()
             if card_btn:
                 self._toggle_thread(card_btn.card_data["id"])

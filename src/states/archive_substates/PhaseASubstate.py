@@ -55,7 +55,7 @@ class PhaseASubstate(BaseState):
 
         # Card overlay is open — close it and check win/fail
         if self.viewing_card:
-            if input_id == "confirm":
+            if input_id == "space":
                 self.viewing_card = False
                 self.current_card = None
                 if self.found_goal:
@@ -79,7 +79,7 @@ class PhaseASubstate(BaseState):
         elif input_id == "move_down":
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(max_d, self.selected_drawer + 1)
-        elif input_id == "confirm":
+        elif input_id == "space":
             self._open_drawer()
 
     def _open_drawer(self):
