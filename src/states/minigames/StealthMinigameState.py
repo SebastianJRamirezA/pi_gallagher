@@ -1,11 +1,7 @@
 """
 P.I. Gallagher: The Missing Art
 
-Stealth Minigame State — top-down stealth prototype.
-
-The detective must cross a guarded area without being spotted.
-Guards have a directional cone of vision that is blocked by obstacles.
-Detection resets the player to the starting position.
+Stealth Minigame State — top-down stealth prototype with Actor integration and Noir aesthetic.
 """
 
 import math
@@ -15,9 +11,11 @@ import pygame
 
 from gale.state import BaseState
 from gale.camera import Camera
-from gale.input_handler import InputData
 
+from src.entity.Player import Player
+from src.entity.Actor import Actor
 import settings
+
 
 def _segments_from_rect(rect: pygame.Rect) -> List[Tuple[Tuple[float, float], Tuple[float, float]]]:
     """Return the four edge segments of a rectangle."""
@@ -69,21 +67,17 @@ def line_of_sight_blocked(
                 return True
     return False
 
+
 def _make_guard(
     x: float, y: float, w: float, h: float,
     angle: float, fov: float, distance: float,
     patrol: Optional[List[Dict]] = None,
+    texture: str = "npc",
 ) -> Dict:
-    """
-    Build a guard dict.
-
-    angle    – direction the guard faces, in degrees.
-               0° = right, 90° = down (pygame screen coords), etc.
-    fov      – total cone aperture in degrees.
-    distance – how far the cone reaches (in world pixels).
-    patrol   – optional list of waypoints: [{"x", "y", "angle"}, ...]
-    """
+    """Build a guard dict with an Actor instance for visual rendering."""
+    actor = Actor(x, y, texture, "Guardia", direction="down")
     guard = {
+        "actor": actor,
         "rect": pygame.Rect(x, y, w, h),
         "fx": float(x),
         "fy": float(y),
@@ -96,13 +90,10 @@ def _make_guard(
     }
     return guard
 
+
 class StealthMinigameState(BaseState):
     """
     Self-contained stealth minigame driven by Gale's BaseState lifecycle.
-
-    enter()  → sets up world data (player, obstacles, guards, camera).
-    update() → polls keyboard, moves player, runs guard patrols & detection.
-    render() → draws everything through the camera offset.
     """
 
     def enter(self, **enter_params) -> None:
@@ -110,16 +101,16 @@ class StealthMinigameState(BaseState):
         self.vh: int = settings.VIRTUAL_HEIGHT  
 
         self.world_width: int = 800
-        self.world_height: int = 400
+        self.world_height: int = 200
 
         self.camera = Camera(self.vw, self.vh, bounds=pygame.Rect(0, 0, self.world_width, self.world_height))
 
         self.player_spawn = (24, 24)
-        self.player = pygame.Rect(self.player_spawn[0], self.player_spawn[1], 8, 8)
+        self.player_entity = Player(self.player_spawn[0], self.player_spawn[1])
         self.player_speed_x: float = 0.0
         self.player_speed_y: float = 0.0
 
-        self.goal = pygame.Rect(self.world_width - 40, self.world_height - 30, 30, 20)
+        self.goal = pygame.Rect(self.world_width - 40, self.world_height - 50, 30, 40)
 
         self.detected_timer: float = 0.0
         self.completed: bool = False
@@ -131,202 +122,224 @@ class StealthMinigameState(BaseState):
         """Static cover objects the player can hide behind."""
         self.obstacles: List[pygame.Rect] = [
             # Room 1 — starting area
-            pygame.Rect(70, 30, 40, 10),
-            pygame.Rect(70, 30, 10, 60),
-            pygame.Rect(140, 80, 50, 10),
-            pygame.Rect(30, 130, 10, 50),
+            pygame.Rect(70, 20, 40, 10),
+            pygame.Rect(70, 20, 10, 60),
+            pygame.Rect(140, 70, 50, 10),
+            pygame.Rect(30, 110, 10, 50),
 
             # Corridor
-            pygame.Rect(200, 0, 10, 70),
-            pygame.Rect(200, 110, 10, 90),
-            pygame.Rect(260, 50, 10, 60),
+            pygame.Rect(200, 0, 10, 60),
+            pygame.Rect(200, 100, 10, 80),
+            pygame.Rect(260, 40, 10, 60),
 
             # Room 2 — central hall
             pygame.Rect(320, 20, 60, 10),
-            pygame.Rect(350, 90, 10, 50),
-            pygame.Rect(420, 60, 10, 80),
-            pygame.Rect(300, 160, 80, 10),
+            pygame.Rect(350, 80, 10, 40),
+            pygame.Rect(420, 50, 10, 70),
+            pygame.Rect(300, 140, 80, 10),
 
             # Room 3 — approach to goal
-            pygame.Rect(500, 30, 50, 10),
-            pygame.Rect(550, 30, 10, 80),
-            pygame.Rect(500, 140, 10, 60),
-            pygame.Rect(600, 100, 60, 10),
-            pygame.Rect(640, 180, 10, 50),
+            pygame.Rect(500, 20, 50, 10),
+            pygame.Rect(550, 20, 10, 70),
+            pygame.Rect(500, 120, 10, 50),
+            pygame.Rect(600, 80, 60, 10),
+            pygame.Rect(640, 130, 10, 50),
 
             # Far room
-            pygame.Rect(700, 50, 50, 10),
-            pygame.Rect(700, 130, 10, 70),
+            pygame.Rect(700, 40, 50, 10),
+            pygame.Rect(700, 110, 10, 60),
 
-            # World border walls (keep the player in-bounds)
-            pygame.Rect(0, 0, self.world_width, 2),           # top
-            pygame.Rect(0, self.world_height - 2, self.world_width, 2),  # bottom
-            pygame.Rect(0, 0, 2, self.world_height),           # left
-            pygame.Rect(self.world_width - 2, 0, 2, self.world_height),  # right
+            # World border walls
+            pygame.Rect(0, 0, self.world_width, 2),
+            pygame.Rect(0, self.world_height - 2, self.world_width, 2),
+            pygame.Rect(0, 0, 2, self.world_height),
+            pygame.Rect(self.world_width - 2, 0, 2, self.world_height),
         ]
 
     def _build_guards(self) -> None:
-        """Guards: some static, some patrolling."""
+        """Guards initialized with active patrols for maximum difficulty."""
         self.guards: List[Dict] = [
-            # Guard 1 — static, watches corridor entrance
-            _make_guard(180, 85, 10, 10, angle=180, fov=70, distance=80),
-
-            # Guard 2 — patrols vertically in the corridor
-            _make_guard(230, 75, 10, 10, angle=90, fov=60, distance=70,
+            # Guardia 1: Patrulla horizontal en la zona inicial
+            _make_guard(180, 75, 10, 10, angle=180, fov=70, distance=80,
                         patrol=[
-                            {"x": 230, "y": 75, "angle": 90},
-                            {"x": 230, "y": 150, "angle": 90},
-                            {"x": 230, "y": 75, "angle": 270},
+                            {"x": 180, "y": 75, "angle": 180},
+                            {"x": 120, "y": 75, "angle": 180},
+                            {"x": 120, "y": 75, "angle": 0},
+                            {"x": 180, "y": 75, "angle": 0},
                         ]),
-
-            # Guard 3 — static in central hall, faces left
-            _make_guard(400, 40, 10, 10, angle=180, fov=80, distance=90),
-
-            # Guard 4 — patrols horizontally in central hall
-            _make_guard(310, 130, 10, 10, angle=0, fov=65, distance=75,
+            # Guardia 2: Patrulla vertical en el corredor
+            _make_guard(230, 65, 10, 10, angle=90, fov=60, distance=70,
                         patrol=[
-                            {"x": 310, "y": 130, "angle": 0},
-                            {"x": 400, "y": 130, "angle": 0},
-                            {"x": 310, "y": 130, "angle": 180},
+                            {"x": 230, "y": 65, "angle": 90},
+                            {"x": 230, "y": 140, "angle": 90},
+                            {"x": 230, "y": 65, "angle": 270},
                         ]),
-
-            # Guard 5 — watches approach to goal
-            _make_guard(580, 120, 10, 10, angle=90, fov=75, distance=80),
-
-            # Guard 6 — patrols near the goal
-            _make_guard(700, 100, 10, 10, angle=180, fov=70, distance=85,
+            # Guardia 3: Patrulla horizontal alta en la sala central
+            _make_guard(400, 35, 10, 10, angle=180, fov=80, distance=90,
                         patrol=[
-                            {"x": 700, "y": 100, "angle": 180},
-                            {"x": 700, "y": 200, "angle": 90},
-                            {"x": 700, "y": 100, "angle": 270},
+                            {"x": 400, "y": 35, "angle": 180},
+                            {"x": 310, "y": 35, "angle": 180},
+                            {"x": 310, "y": 35, "angle": 0},
+                            {"x": 400, "y": 35, "angle": 0},
+                        ]),
+            # Guardia 4: Patrulla horizontal media en la sala central
+            _make_guard(310, 110, 10, 10, angle=0, fov=65, distance=75,
+                        patrol=[
+                            {"x": 310, "y": 110, "angle": 0},
+                            {"x": 400, "y": 110, "angle": 0},
+                            {"x": 400, "y": 110, "angle": 180},
+                            {"x": 310, "y": 110, "angle": 180},
+                        ]),
+            # Guardia 5: Patrulla vertical cubriendo el paso previo a la meta
+            _make_guard(580, 40, 10, 10, angle=90, fov=75, distance=80,
+                        patrol=[
+                            {"x": 580, "y": 40, "angle": 90},
+                            {"x": 580, "y": 140, "angle": 90},
+                            {"x": 580, "y": 40, "angle": 270},
+                        ]),
+            # Guardia 6: Patrulla en 'L' patrullando el acceso final
+            _make_guard(700, 80, 10, 10, angle=180, fov=70, distance=85,
+                        patrol=[
+                            {"x": 700, "y": 80, "angle": 180},
+                            {"x": 630, "y": 80, "angle": 90},
+                            {"x": 630, "y": 160, "angle": 0},
+                            {"x": 700, "y": 160, "angle": 270},
+                            {"x": 700, "y": 80, "angle": 180},
                         ]),
         ]
+
+    def on_input(self, input_id: str, input_data) -> None:
+        self.player_entity.on_input(input_id, input_data)
+
+        speed = 60.0
+        if input_id == "move_up":
+            if input_data.pressed:
+                self.player_speed_y = -speed
+            elif input_data.released:
+                self.player_speed_y = 0.0
+        elif input_id == "move_down":
+            if input_data.pressed:
+                self.player_speed_y = speed
+            elif input_data.released:
+                self.player_speed_y = 0.0
+        elif input_id == "move_right":
+            if input_data.pressed:
+                self.player_speed_x = speed
+            elif input_data.released:
+                self.player_speed_x = 0.0
+        elif input_id == "move_left":
+            if input_data.pressed:
+                self.player_speed_x = -speed
+            elif input_data.released:
+                self.player_speed_x = 0.0
 
     def update(self, dt: float) -> None:
         if getattr(self, "completed", False):
             return
-        self._update_player(dt)
+
+        self.player_entity.update(dt)
+        self._update_player_movement(dt)
         self._update_guards(dt)
         self._check_detection()
+
         if self._check_goal():
             return
+
         self._update_camera(dt)
 
         if self.detected_timer > 0:
             self.detected_timer -= dt
 
-    def on_input(self, input_id, input_data):
-        if input_id == "move_up":
-            if input_data.pressed: 
-                self.player_speed_y = -60.0
-            elif input_data.released: 
-                self.player_speed_y = 0.0
-        elif input_id == "move_down":
-            if input_data.pressed: 
-                self.player_speed_y = 60.0
-            elif input_data.released: 
-                self.player_speed_y = 0.0
-        elif input_id == "move_right":
-            if input_data.pressed: 
-                self.player_speed_x = 60.0
-            elif input_data.released: 
-                self.player_speed_x = 0.0
-        elif input_id == "move_left":
-            if input_data.pressed: 
-                self.player_speed_x = -60.0
-            elif input_data.released: 
-                self.player_speed_x = 0.0
-
-    def _update_player(self, dt):
-        self.player.x += self.player_speed_x * dt
-
+    def _update_player_movement(self, dt: float) -> None:
+        # Movimiento horizontal
+        dx = self.player_speed_x * dt
+        self.player_entity.x += dx
         for obs in self.obstacles:
-            if self.player.colliderect(obs):
-                if self.player_speed_x > 0:
-                    self.player.right = obs.left
-                elif self.player_speed_x < 0:
-                    self.player.left = obs.right
+            if self.player_entity.collision_rect.colliderect(obs):
+                if dx > 0:
+                    self.player_entity.x = obs.left - 4 - self.player_entity.collision_rect.width
+                elif dx < 0:
+                    self.player_entity.x = obs.right - 4
 
-        self.player.y += self.player_speed_y * dt 
-
+        # Movimiento vertical
+        dy = self.player_speed_y * dt
+        self.player_entity.y += dy
         for obs in self.obstacles:
-            if self.player.colliderect(obs):
-                if self.player_speed_y > 0:
-                    self.player.bottom = obs.top
-                elif self.player_speed_y < 0:
-                    self.player.top = obs.bottom
+            if self.player_entity.collision_rect.colliderect(obs):
+                if dy > 0:
+                    self.player_entity.y = obs.top - 15 - self.player_entity.collision_rect.height
+                elif dy < 0:
+                    self.player_entity.y = obs.bottom - 15
 
     def _update_guards(self, dt: float) -> None:
         for guard in self.guards:
             patrol = guard["patrol"]
-            if patrol is None:
-                continue
+            if patrol is not None:
+                wp = patrol[guard["patrol_index"]]
+                tx, ty = float(wp["x"]), float(wp["y"])
+                gx, gy = guard["fx"], guard["fy"]
 
-            wp = patrol[guard["patrol_index"]]
-            tx, ty = float(wp["x"]), float(wp["y"])
-            gx, gy = guard["fx"], guard["fy"]
+                dist = math.hypot(tx - gx, ty - gy)
+                if dist < 1.0:
+                    guard["fx"] = tx
+                    guard["fy"] = ty
+                    guard["angle"] = wp["angle"]
+                    guard["patrol_index"] = (guard["patrol_index"] + 1) % len(patrol)
+                else:
+                    speed = guard["patrol_speed"] * dt
+                    ratio = min(speed / dist, 1.0)
+                    guard["fx"] += (tx - gx) * ratio
+                    guard["fy"] += (ty - gy) * ratio
+                    guard["angle"] = math.degrees(math.atan2(ty - gy, tx - gx))
 
-            dist = math.hypot(tx - gx, ty - gy)
-            if dist < 1.0:
-                # Snap to waypoint, adopt its facing angle
-                guard["fx"] = tx
-                guard["fy"] = ty
-                guard["angle"] = wp["angle"]
-                guard["patrol_index"] = (
-                    (guard["patrol_index"] + 1) % len(patrol)
-                )
-            else:
-                # Move toward waypoint (float precision)
-                speed = guard["patrol_speed"] * dt
-                ratio = min(speed / dist, 1.0)
-                guard["fx"] += (tx - gx) * ratio
-                guard["fy"] += (ty - gy) * ratio
-
-                # Face movement direction while walking
-                guard["angle"] = math.degrees(math.atan2(ty - gy, tx - gx))
-
-            # Sync the integer Rect from the float position
             guard["rect"].x = int(guard["fx"])
             guard["rect"].y = int(guard["fy"])
 
+            actor = guard["actor"]
+            actor.x = guard["fx"]
+            actor.y = guard["fy"]
+
+            ang = guard["angle"] % 360
+            if 45 <= ang < 135:
+                actor.direction = "down"
+            elif 135 <= ang < 225:
+                actor.direction = "left"
+            elif 225 <= ang < 315:
+                actor.direction = "up"
+            else:
+                actor.direction = "right"
+
     def _check_detection(self) -> None:
-        px, py = self.player.center
+        px, py = self.player_entity.collision_rect.center
 
         for guard in self.guards:
             gx, gy = guard["rect"].center
 
-            # 1. Distance check
             dist = math.hypot(px - gx, py - gy)
             if dist > guard["distance"] or dist == 0:
                 continue
 
-            # 2. Angle check — is the player inside the cone?
-            #    guard["angle"] uses screen-space convention:
-            #    0° = right, 90° = down
             vx, vy = px - gx, py - gy
             rad = math.radians(guard["angle"])
             fx, fy = math.cos(rad), math.sin(rad)
 
             dot = vx * fx + vy * fy
-            cos_to_player = dot / dist
-            cos_to_player = max(-1.0, min(1.0, cos_to_player))
+            cos_to_player = max(-1.0, min(1.0, dot / dist))
             angle_diff = math.degrees(math.acos(cos_to_player))
 
             if angle_diff > guard["fov"] / 2.0:
                 continue
 
-            # 3. Line-of-sight — is an obstacle between guard and player?
             if line_of_sight_blocked((gx, gy), (px, py), self.obstacles):
                 continue
 
-            # Detected!
             self._reset_player()
             break
 
     def _check_goal(self) -> bool:
         if getattr(self, "completed", False):
             return True
-        if self.player.colliderect(self.goal):
+        if self.player_entity.collision_rect.colliderect(self.goal):
             self.completed = True
             from src.story.StoryManager import StoryManager
             story = StoryManager.get_instance()
@@ -344,66 +357,90 @@ class StealthMinigameState(BaseState):
         return False
 
     def _reset_player(self) -> None:
-        self.player.x = self.player_spawn[0]
-        self.player.y = self.player_spawn[1]
+        self.player_entity.x = float(self.player_spawn[0])
+        self.player_entity.y = float(self.player_spawn[1])
+        self.player_speed_x = 0.0
+        self.player_speed_y = 0.0
         self.detected_timer = 0.6
 
     def _update_camera(self, dt: float) -> None:
-        self.camera.x = self.player.centerx
-        self.camera.y = self.player.centery
+        self.camera.x = self.player_entity.x
+        self.camera.y = self.player_entity.y
         self.camera.update(dt)
 
+    def _draw_tiled_floor(self, surface: pygame.Surface) -> None:
+        """Dibuja un patrón de suelo de madera coherente con el mapa del nightclub."""
+        cam = self.camera
+        tile_size = 16
+        
+        floor_color_1 = (175, 90, 40)
+        floor_color_2 = (165, 80, 35)
+
+        start_x = max(0, int(cam.x - self.vw / 2) // tile_size * tile_size)
+        end_x = min(self.world_width, int(cam.x + self.vw / 2) + tile_size)
+        start_y = max(0, int(cam.y - self.vh / 2) // tile_size * tile_size)
+        end_y = min(self.world_height, int(cam.y + self.vh / 2) + tile_size)
+
+        for x in range(start_x, end_x, tile_size):
+            for y in range(start_y, end_y, tile_size):
+                rect = pygame.Rect(x, y, tile_size, tile_size)
+                screen_rect = cam.apply(rect)
+                color = floor_color_1 if ((x // tile_size) + (y // tile_size)) % 2 == 0 else floor_color_2
+                pygame.draw.rect(surface, color, screen_rect)
+
     def render(self, surface: pygame.Surface) -> None:
-        surface.fill((12, 10, 18))  # dark noir background
+        # 1. Fondo base y suelo con textura de baldosas
+        surface.fill((20, 15, 25))
+        self._draw_tiled_floor(surface)
 
         cam = self.camera
 
-        # 1. Goal zone (subtle green glow)
+        # 2. Zona Objetivo (Oficina de Blackwood)
         goal_screen = cam.apply(self.goal)
-        goal_surf = pygame.Surface((goal_screen.w, goal_screen.h), pygame.SRCALPHA)
-        goal_surf.fill((40, 180, 80, 60))
-        surface.blit(goal_surf, goal_screen.topleft)
-        pygame.draw.rect(surface, (40, 180, 80), goal_screen, 1)
+        pygame.draw.rect(surface, (140, 40, 40), goal_screen)
+        pygame.draw.rect(surface, (230, 190, 90), goal_screen, 1)
 
-        # 2. Obstacles (dark grey bricks)
+        # 3. Obstáculos / Coberturas
         for obs in self.obstacles:
             screen_rect = cam.apply(obs)
-            pygame.draw.rect(surface, (55, 50, 60), screen_rect)
-            pygame.draw.rect(surface, (75, 70, 80), screen_rect, 1)
+            pygame.draw.rect(surface, (110, 55, 25), screen_rect)
+            if screen_rect.width > 12 and screen_rect.height > 12:
+                inner_rect = screen_rect.inflate(-4, -4)
+                pygame.draw.rect(surface, (35, 120, 85), inner_rect)
+            pygame.draw.rect(surface, (60, 30, 10), screen_rect, 1)
 
-        # 3. Guard FOV cones (translucent yellow)
+        # 4. Conos de visión (por debajo de los personajes)
         for guard in self.guards:
             self._render_fov(surface, guard, cam)
 
-        # 4. Guards (red squares)
+        # 5. Dibujar Guardias (usando Actor)
         for guard in self.guards:
-            screen_guard = cam.apply(guard["rect"])
-            pygame.draw.rect(surface, (190, 45, 45), screen_guard)
-            pygame.draw.rect(surface, (220, 80, 80), screen_guard, 1)
+            guard["actor"].render(surface, camera=cam)
 
-        # 5. Player (blue circle)
-        px, py = cam.world_to_screen(self.player.center)
-        radius = max(int(self.player.w * cam.zoom / 2), 2)
-        pygame.draw.circle(surface, (50, 100, 200), (int(px), int(py)), radius)
-        pygame.draw.circle(surface, (100, 160, 255), (int(px), int(py)), radius, 1)
+        # 6. Dibujar a Gallagher (usando Player)
+        self.player_entity.render(surface, camera=cam)
 
-        # 6. Detection flash overlay
+        # 7. Capa de Oscuridad / Vignette Noir
+        darkness = pygame.Surface((self.vw, self.vh), pygame.SRCALPHA)
+        darkness.fill((10, 10, 20, 110))
+        surface.blit(darkness, (0, 0))
+
+        # 8. Flash de Detección
         if self.detected_timer > 0:
-            alpha = int(120 * (self.detected_timer / 0.6))
+            alpha = int(140 * (self.detected_timer / 0.6))
             flash = pygame.Surface((self.vw, self.vh), pygame.SRCALPHA)
-            flash.fill((200, 30, 30, alpha))
+            flash.fill((220, 40, 40, alpha))
             surface.blit(flash, (0, 0))
 
     def _render_fov(
         self, surface: pygame.Surface, guard: Dict, cam: Camera
     ) -> None:
-        """Draw a translucent cone polygon for the guard's field of view."""
+        """Renderiza los conos de visión como luz de linterna ámbar cálida."""
         gx, gy = guard["rect"].center
         rad = math.radians(guard["angle"])
         half_fov = math.radians(guard["fov"] / 2.0)
         dist = guard["distance"]
 
-        # Build cone arc as a fan of points (12 segments for smoothness)
         num_segments = 12
         world_points = [(gx, gy)]
 
@@ -414,13 +451,10 @@ class StealthMinigameState(BaseState):
             wy = gy + math.sin(a) * dist
             world_points.append((wx, wy))
 
-        # Transform to screen
         screen_points = [cam.world_to_screen(p) for p in world_points]
         int_points = [(int(p[0]), int(p[1])) for p in screen_points]
 
-        # Semi-transparent fill
         if len(int_points) >= 3:
-            # Compute bounding box for the minimal surface
             xs = [p[0] for p in int_points]
             ys = [p[1] for p in int_points]
             min_x, max_x = min(xs), max(xs)
@@ -431,6 +465,6 @@ class StealthMinigameState(BaseState):
             if w > 0 and h > 0:
                 fov_surf = pygame.Surface((w, h), pygame.SRCALPHA)
                 shifted = [(p[0] - min_x, p[1] - min_y) for p in int_points]
-                pygame.draw.polygon(fov_surf, (200, 190, 50, 35), shifted)
-                pygame.draw.polygon(fov_surf, (200, 190, 50, 70), shifted, 1)
+                pygame.draw.polygon(fov_surf, (230, 180, 70, 45), shifted)
+                pygame.draw.polygon(fov_surf, (255, 210, 100, 90), shifted, 1)
                 surface.blit(fov_surf, (min_x, min_y))
