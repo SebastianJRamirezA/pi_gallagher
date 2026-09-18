@@ -7,6 +7,7 @@ conditional triggers, dynamic NPCs, and narrative progression via StoryManager.
 
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, Callable
+import random
 
 import pygame
 from gale.camera import Camera
@@ -323,11 +324,19 @@ class World:
                     self.player.x, self.player.y = self.region.entry_position("south")
                     self._sync_camera_instant()
 
+                    # Play door sound for indoor locations, bypass open street transitions like the alley
+                    if door_name != "alley":
+                        settings.SOUNDS[f"doorOpen_{random.randint(1, 4)}"].play()
+
                 self._start_transition(enter_door_action)
                 return
 
             if door_name == "exit":
                 def exit_door_action():
+                    # Play door sound only when leaving an indoor room, not when walking out of the alley
+                    if self.current_region_name != "alley":
+                        settings.SOUNDS[f"doorClose_{random.randint(1, 2)}"].play()
+
                     self._return_to_city()
                     self._sync_camera_instant()
 
@@ -337,7 +346,7 @@ class World:
             if door_name in ("stealth", "safecracker"):
                 self._try_enter_club_door(door_name)
                 return
-
+            
     def _sync_camera_instant(self) -> None:
         """Instantly align camera position with player and update bounds to avoid jumps."""
         self._update_camera_bounds()

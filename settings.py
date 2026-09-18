@@ -101,4 +101,10 @@ FONTS = {
 
 SOUNDS = {
     "clock": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "clock.wav"),
+    "doorClose_1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_1.ogg"),
+    "doorClose_2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_2.ogg"),
+    "doorClose_3": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_3.ogg"),
+    "doorClose_4": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_4.ogg"),
+    "doorOpen_1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorOpen_1.ogg"),
+    "doorOpen_2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorOpen_2.ogg"),
 }
