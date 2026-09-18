@@ -20,6 +20,8 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RIGHT, "move_ri
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_UP, "move_up")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_DOWN, "move_down")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_SPACE, "space")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_e, "interact")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_f, "shoot")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "details")
@@ -68,6 +70,9 @@ def _actor_sheet(color):
 TEXTURES["player"] = _actor_sheet((190, 205, 220))
 TEXTURES["npc"] = _actor_sheet((210, 165, 105))
 TEXTURES["gallagher"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "gallagher.png")
+TEXTURES["gallagher_shoot"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "gallagher_shot.png")
+TEXTURES["bandit"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "bandit.png")
+TEXTURES["bandit_hit"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "badit_hit.png")
 
 FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
@@ -75,6 +80,9 @@ FRAMES = {
     "player": frames.generate_frames(TEXTURES["player"], 16, 18),
     "npc": frames.generate_frames(TEXTURES["npc"], 16, 18),
     "gallagher": frames.generate_frames(TEXTURES["gallagher"], 19, 28),
+    "gallagher_shoot": frames.generate_frames(TEXTURES["gallagher_shoot"], 20, 31),
+    "bandit": frames.generate_frames(TEXTURES["bandit"], 20, 37),
+    "bandit_hit": frames.generate_frames(TEXTURES["bandit_hit"], 30, 33),
 }
 
 TILE_SIZE = 16

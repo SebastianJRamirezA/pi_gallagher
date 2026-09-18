@@ -452,9 +452,18 @@ class World:
 
                 def on_confrontation_complete():
                     def on_confession_end():
-                        for c in data["reward_cards"]:
-                            self.story.add_card(c)
-                        self.story.flags["morales_confronted"] = True
+                        def on_combat_complete():
+                            for c in data["reward_cards"]:
+                                self.story.add_card(c)
+                            self.story.flags["morales_confronted"] = True
+                        
+                        from src.states.minigames.CombatState import CombatState
+                        self.stack.push(
+                            CombatState(self.stack),
+                            world_state=self,
+                            on_complete=on_combat_complete
+                        )
+
                     self.stack.push(
                         DialogueState(self.stack),
                         text=data["pages"],

@@ -153,11 +153,11 @@ class DialogueState(BaseState):
             self.hint_label.set_text("ESPACIO para cerrar")
 
     def _close_dialogue(self) -> None:
+        self.state_machine.pop()
         if self.on_finish is not None:
             cb = self.on_finish
             self.on_finish = None
             cb()
-        self.state_machine.pop()
 
     def update(self, dt: float) -> None:
         self.ui.update(dt)
