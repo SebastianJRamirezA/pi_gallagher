@@ -6,12 +6,13 @@ conditional triggers, dynamic NPCs, and narrative progression via StoryManager.
 """
 
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
 
 import pygame
 from gale.camera import Camera
 from gale.state import StateStack
 from gale.text import render_text
+from gale.timer import Timer
 
 from gale.ui import Label, Panel
 import settings
@@ -70,6 +71,11 @@ class World:
         self.camera.x, self.camera.y = self.player.x, self.player.y
         self.camera.update(0)
 
+        # Transition effect variables
+        self.transitioning = False
+        self.transition_alpha = 255
+        Timer.tween(0.4, [(self, {"transition_alpha": 0})], ease_function_name="out_cubic")
+
         # Setup triggers and NPCs in each region
         self._setup_triggers()
         self._populate_npcs()
@@ -85,6 +91,33 @@ class World:
     @property
     def region(self) -> Region:
         return self.regions[self.current_region_name]
+
+    # ── Configuración de Transiciones ───────────────────────────────────────
+
+    def _start_transition(self, on_middle_action: Callable[[], None]) -> None:
+        """Handles screen fade-out and fade-in when changing rooms/zones."""
+        if self.transitioning:
+            return
+
+        self.transitioning = True
+        self.transition_alpha = 0
+        self._clear_movement()
+
+        def on_fade_out_complete():
+            on_middle_action()
+            Timer.tween(
+                0.4,
+                [(self, {"transition_alpha": 0})],
+                ease_function_name="out_cubic",
+                on_finish=lambda: setattr(self, "transitioning", False),
+            )
+
+        Timer.tween(
+            0.4,
+            [(self, {"transition_alpha": 255})],
+            ease_function_name="in_cubic",
+            on_finish=on_fade_out_complete,
+        )
 
     # ── Configuración de Triggers ────────────────────────────────────────────
 
@@ -227,20 +260,21 @@ class World:
     # ── Actualización de Cuadro y Movimiento ─────────────────────────────────
 
     def update(self, dt: float) -> None:
-        dx = float(self.player.held["move_right"] - self.player.held["move_left"])
-        dy = float(self.player.held["move_down"] - self.player.held["move_up"])
-        if dx and dy:
-            dx *= 0.7071
-            dy *= 0.7071
+        if not self.transitioning:
+            dx = float(self.player.held["move_right"] - self.player.held["move_left"])
+            dy = float(self.player.held["move_down"] - self.player.held["move_up"])
+            if dx and dy:
+                dx *= 0.7071
+                dy *= 0.7071
 
-        self._move_axis(dx * Player.SPEED * dt, 0)
-        self._move_axis(0, dy * Player.SPEED * dt)
-        self.player.update(dt)
+            self._move_axis(dx * Player.SPEED * dt, 0)
+            self._move_axis(0, dy * Player.SPEED * dt)
+            self.player.update(dt)
 
-        self._check_door_collision()
-        self._update_interaction_prompts()
+            self._check_door_collision()
+            self._update_interaction_prompts()
+
         self.camera.update(dt)
-
         self.story.update_notifications(dt)
 
     def _move_axis(self, dx: float, dy: float) -> None:
@@ -264,7 +298,10 @@ class World:
         return player_rect.colliderect(door_rect)
 
     def _check_door_collision(self) -> None:
-        """Verify door collisions with narrative gating."""
+        """Verify door collisions with narrative gating and trigger transitions."""
+        if self.transitioning:
+            return
+
         for door in self._door_objects():
             if not self._door_collides(door):
                 continue
@@ -281,19 +318,31 @@ class World:
                     self._monologue(reason)
                     return
 
-                self.current_region_name = door_name
-                self.player.x, self.player.y = self.region.entry_position("south")
-                self._update_camera_bounds()
+                def enter_door_action():
+                    self.current_region_name = door_name
+                    self.player.x, self.player.y = self.region.entry_position("south")
+                    self._sync_camera_instant()
+
+                self._start_transition(enter_door_action)
                 return
 
             if door_name == "exit":
-                self._return_to_city()
-                self._update_camera_bounds()
+                def exit_door_action():
+                    self._return_to_city()
+                    self._sync_camera_instant()
+
+                self._start_transition(exit_door_action)
                 return
 
             if door_name in ("stealth", "safecracker"):
                 self._try_enter_club_door(door_name)
                 return
+
+    def _sync_camera_instant(self) -> None:
+        """Instantly align camera position with player and update bounds to avoid jumps."""
+        self._update_camera_bounds()
+        self.camera.x, self.camera.y = self.player.x, self.player.y
+        self.camera.update(0)
 
     def _return_to_city(self) -> None:
         city_door = self.regions["city"].tilemap.object_layers["Doors"][
@@ -354,6 +403,8 @@ class World:
     # ── Manejo de Entrada (Interacción) ──────────────────────────────────────
 
     def on_input(self, input_id: str, input_data: Any) -> None:
+        if self.transitioning:
+            return
         self.player.on_input(input_id, input_data)
         if input_id in ("space", "enter") and getattr(input_data, "pressed", False):
             self._try_interact()
@@ -551,3 +602,11 @@ class World:
                 theme=NOIR_PROMPT_THEME,
             )
             prompt_label.render(surface)
+
+        if self.transition_alpha > 0:
+            overlay = pygame.Surface(
+                (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT),
+                pygame.SRCALPHA,
+            )
+            overlay.fill((0, 0, 0, int(self.transition_alpha)))
+            surface.blit(overlay, (0, 0))
