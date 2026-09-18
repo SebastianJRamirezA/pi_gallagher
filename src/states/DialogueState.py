@@ -110,11 +110,11 @@ class DialogueState(BaseState):
         self.hint_label.set_text(hint_str)
 
     def _close_dialogue(self) -> None:
+        self.state_machine.pop()
         if self.on_finish is not None:
             cb = self.on_finish
             self.on_finish = None
             cb()
-        self.state_machine.pop()
 
     def update(self, dt: float) -> None:
         # Crucial: Explicitly tick the textbox animation every frame
