@@ -11,6 +11,8 @@ import pygame
 
 from gale.state import BaseState
 from gale.camera import Camera
+from gale.timer import Timer
+from gale.text import render_text
 
 from src.entity.Player import Player
 from src.entity.Actor import Actor
@@ -101,7 +103,7 @@ class StealthMinigameState(BaseState):
         self.vh: int = settings.VIRTUAL_HEIGHT  
 
         self.world_width: int = 800
-        self.world_height: int = 200
+        self.world_height: int = 220
 
         self.camera = Camera(self.vw, self.vh, bounds=pygame.Rect(0, 0, self.world_width, self.world_height))
 
@@ -114,6 +116,19 @@ class StealthMinigameState(BaseState):
 
         self.detected_timer: float = 0.0
         self.completed: bool = False
+
+        # Configuración del temporizador al igual que en SafeCrackerState
+        self.timer = 45.0
+
+        def decrement_timer():
+            self.timer -= 1
+
+            # Play warning sound on timer if we get low
+            if self.timer <= 5 and self.timer > 0:
+                if "clock" in settings.SOUNDS:
+                    settings.SOUNDS["clock"].play()
+
+        Timer.every(1, decrement_timer)
 
         self._build_obstacles()
         self._build_guards()
@@ -237,6 +252,11 @@ class StealthMinigameState(BaseState):
         if getattr(self, "completed", False):
             return
 
+        # Si el tiempo se agota, reiniciamos al jugador y reseteamos el tiempo
+        if self.timer <= 0:
+            self._reset_player()
+            self.timer = 45.0
+
         self.player_entity.update(dt)
         self._update_player_movement(dt)
         self._update_guards(dt)
@@ -341,6 +361,7 @@ class StealthMinigameState(BaseState):
             return True
         if self.player_entity.collision_rect.colliderect(self.goal):
             self.completed = True
+            Timer.clear()
             from src.story.StoryManager import StoryManager
             story = StoryManager.get_instance()
             for c in ("C09", "C11"):
@@ -431,6 +452,17 @@ class StealthMinigameState(BaseState):
             flash = pygame.Surface((self.vw, self.vh), pygame.SRCALPHA)
             flash.fill((220, 40, 40, alpha))
             surface.blit(flash, (0, 0))
+
+        # 9. Renderizado del Temporizador
+        timer_color = (196, 72, 57) if self.timer <= 10 else (218, 214, 198)
+        render_text(
+            surface, 
+            f"TIME: {int(self.timer)}", 
+            settings.FONTS["medium"], 
+            self.vw - 70, 
+            10, 
+            timer_color
+        )
 
     def _render_fov(
         self, surface: pygame.Surface, guard: Dict, cam: Camera
