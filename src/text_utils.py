@@ -36,3 +36,45 @@ def wrap_text(font: pygame.font.Font, text: str, max_width: float) -> List[str]:
         lines.append(current)
 
     return lines
+
+class TypewriterEffect:
+    """Helper class to manage typewriter text revelation animations."""
+
+    def __init__(self, char_speed: float = 0.035) -> None:
+        self.char_speed = char_speed
+        self.full_text = ""
+        self.char_index = 0
+        self.char_timer = 0.0
+        self.finished = True
+
+    def set_text(self, text: str) -> None:
+        """Resets state with new text to animate."""
+        self.full_text = text
+        self.char_index = 0
+        self.char_timer = 0.0
+        self.finished = len(text) == 0
+
+    def update(self, dt: float) -> None:
+        """Advances character counter based on delta time."""
+        if self.finished:
+            return
+
+        self.char_timer += dt
+        total_chars = len(self.full_text)
+        
+        while self.char_timer >= self.char_speed and self.char_index < total_chars:
+            self.char_timer -= self.char_speed
+            self.char_index += 1
+
+        if self.char_index >= total_chars:
+            self.finished = True
+
+    def complete(self) -> None:
+        """Instantly finishes typing out the text."""
+        self.char_index = len(self.full_text)
+        self.finished = True
+
+    @property
+    def visible_text(self) -> str:
+        """Returns the slice of text that should currently be rendered."""
+        return self.full_text[: self.char_index]
