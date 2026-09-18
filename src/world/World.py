@@ -326,7 +326,7 @@ class World:
 
                     # Play door sound for indoor locations, bypass open street transitions like the alley
                     if door_name != "alley":
-                        settings.SOUNDS[f"doorOpen_{random.randint(1, 4)}"].play()
+                        settings.SOUNDS[f"doorOpen_{random.randint(1, 2)}"].play()
 
                 self._start_transition(enter_door_action)
                 return
@@ -335,7 +335,7 @@ class World:
                 def exit_door_action():
                     # Play door sound only when leaving an indoor room, not when walking out of the alley
                     if self.current_region_name != "alley":
-                        settings.SOUNDS[f"doorClose_{random.randint(1, 2)}"].play()
+                        settings.SOUNDS[f"doorClose_{random.randint(1, 4)}"].play()
 
                     self._return_to_city()
                     self._sync_camera_instant()
