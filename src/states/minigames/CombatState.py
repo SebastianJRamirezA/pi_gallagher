@@ -532,6 +532,13 @@ class CombatState(BaseState):
         on_complete: Optional[Callable[[], None]] = None,
         **kwargs: Any,
     ) -> None:
+
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "persecution.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         if params is None:
             params = {}
 
@@ -811,6 +818,7 @@ class CombatState(BaseState):
         if self.status_text:
             if input_id in ("space", "enter", "interact", "confirm"):
                 if self.enemy.hp <= 0:
+                    pygame.mixer.music.stop()
                     self.state_machine.pop()
                     if self.on_victory:
                         self.on_victory()

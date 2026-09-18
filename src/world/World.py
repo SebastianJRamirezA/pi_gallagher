@@ -237,7 +237,7 @@ class World:
 
     def _open_corkboard(self, world: Any, story: StoryManager) -> None:
         self._clear_movement()
-        pygame.mixer.music.stop()
+        pygame.mixer.music.pause()
         self.stack.push(CorkboardState(self.stack))
         self.bgm_playing = False
 
@@ -269,7 +269,7 @@ class World:
             self._monologue(reason)
             return
         self._clear_movement()
-        pygame.mixer.music.stop()
+        pygame.mixer.music.pause()
         self.stack.push(PoliceArchiveState(self.stack))
         self.bgm_playing = False
 
@@ -283,12 +283,12 @@ class World:
         self._clear_movement()
         if door_type == "stealth":
             self.player.y = max(self.player.y, 52)
-            pygame.mixer.music.stop()
+            pygame.mixer.music.pause()
             self.stack.push(StealthMinigameState(self.stack))
             self.bgm_playing = False
         elif door_type == "safecracker":
             self.player.y = max(self.player.y, 58)
-            pygame.mixer.music.stop()
+            pygame.mixer.music.pause()
             self.stack.push(SafeCrackerState(self.stack))
             self.bgm_playing = False
 
@@ -532,7 +532,7 @@ class World:
                     self.story.flags["sofia_confronted"] = True
                     self._show_case_closed_ending()
 
-                pygame.mixer.music.stop()
+                pygame.mixer.music.pause()
                 self.bgm_playing = False
                 self.stack.push(
                     ConfrontationState(self.stack),
@@ -568,7 +568,9 @@ class World:
                             "player_health": 3,
                             "world_state": self,
                         }
+                        pygame.mixer.music.pause()
                         self.stack.push(CombatState(self.stack), params=params)
+                        self.bgm_playing = False
 
                     self.stack.push(
                         DialogueState(self.stack),
@@ -577,7 +579,7 @@ class World:
                         on_finish=on_confession_end,
                     )
 
-                pygame.mixer.music.stop()
+                pygame.mixer.music.pause()
                 self.stack.push(
                     ConfrontationState(self.stack),
                     confrontation_id="morales",
