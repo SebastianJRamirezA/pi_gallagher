@@ -32,6 +32,19 @@ class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
 
+    # Configuration map linking dialogue keys to display names and default facing directions
+    NPC_CONFIGS = {
+        "sofia_office": {"display_name": "Sofia Del Roscio", "direction": "right"},
+        "lauren_office": {"display_name": "Lauren", "direction": "down"},
+        "museum_curator": {"display_name": "Curador Lombardi", "direction": "down"},
+        "police_officer": {"display_name": "Sargento Bianchi", "direction": "down"},
+        "morales_interrogation": {"display_name": "Guardia Morales", "direction": "down"},
+        "sofia_club": {"display_name": "Sofia Del Roscio", "direction": "left"},
+        "canillita": {"display_name": "Canillita", "direction": "down"},
+        "citizen_unemployed": {"display_name": "Desempleado", "direction": "right"},
+        "citizen_patron": {"display_name": "Parroquiano", "direction": "left"},
+    }
+
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
         self.story = StoryManager.get_instance()
@@ -77,7 +90,6 @@ class World:
 
     def _setup_triggers(self) -> None:
         """Bind dynamic actions and prompts to tilemap-loaded triggers."""
-        # Mapping table for custom trigger prompts and action callbacks
         trigger_configs = {
             "corkboard": {
                 "prompt": "[ESPACIO] Examinar Pizarra de Corcho",
@@ -105,7 +117,6 @@ class World:
             for trigger in region.triggers:
                 if trigger.trigger_id in trigger_configs:
                     cfg = trigger_configs[trigger.trigger_id]
-                    # Assign defaults if prompt wasn't set inside Tiled
                     if not trigger.prompt_text:
                         trigger.prompt_text = cfg["prompt"]
                     trigger.action_fn = cfg["action"]
@@ -113,36 +124,33 @@ class World:
     # ── Población de NPCs ───────────────────────────────────────────────────
 
     def _populate_npcs(self) -> None:
-        """Spawn story-relevant NPCs in their respective locations."""
-        for r in self.regions.values():
-            r.npcs.clear()
+        """Dynamically populate NPCs in each region based on Tiled NPC layers."""
+        for region in self.regions.values():
+            region.npcs.clear()
+            npc_layer = region.tilemap.object_layers.get("NPCs", [])
 
-        # 1. Oficina
-        office = self.regions["office"]
-        office.npcs.append(NPC(198, 80, "Sofia Del Roscio", dialogue_key="sofia_office", direction="right"))
-        office.npcs.append(NPC(160, 68, "Lauren", dialogue_key="lauren_office", direction="down"))
+            for obj in npc_layer:
+                dialogue_key = str(getattr(obj, "name", "") or "").strip()
+                if not dialogue_key:
+                    continue
 
-        # 2. Museo
-        museum = self.regions["museum"]
-        museum.npcs.append(NPC(200, 180, "Curador Lombardi", dialogue_key="museum_curator", direction="down"))
+                # Match against configuration metadata or fallback to Tiled attributes
+                config = self.NPC_CONFIGS.get(
+                    dialogue_key,
+                    {
+                        "display_name": getattr(obj, "display_name", dialogue_key.capitalize()),
+                        "direction": getattr(obj, "direction", "down"),
+                    },
+                )
 
-        # 3. Comisaría
-        police = self.regions["police_station"]
-        police.npcs.append(NPC(180, 160, "Sargento Bianchi", dialogue_key="police_officer", direction="down"))
-
-        # 4. Callejón
-        alley = self.regions["alley"]
-        alley.npcs.append(NPC(240, 140, "Guardia Morales", dialogue_key="morales_interrogation", direction="down"))
-
-        # 5. Nightclub
-        club = self.regions["nightclub"]
-        club.npcs.append(NPC(280, 180, "Sofia Del Roscio", dialogue_key="sofia_club", direction="left"))
-
-        # 6. Ciudad
-        city = self.regions["city"]
-        city.npcs.append(NPC(1040, 720, "Canillita", dialogue_key="canillita", direction="down"))
-        city.npcs.append(NPC(600, 730, "Desempleado", dialogue_key="citizen_unemployed", direction="right"))
-        city.npcs.append(NPC(900, 730, "Parroquiano", dialogue_key="citizen_patron", direction="left"))
+                npc = NPC(
+                    x=obj.x,
+                    y=obj.y,
+                    name=config["display_name"],
+                    dialogue_key=dialogue_key,
+                    direction=config["direction"],
+                )
+                region.npcs.append(npc)
 
     # ── Acciones de Triggers e Interacciones ─────────────────────────────────
 
@@ -219,7 +227,6 @@ class World:
     # ── Actualización de Cuadro y Movimiento ─────────────────────────────────
 
     def update(self, dt: float) -> None:
-        # Movement calculation
         dx = float(self.player.held["move_right"] - self.player.held["move_left"])
         dy = float(self.player.held["move_down"] - self.player.held["move_up"])
         if dx and dy:
@@ -234,7 +241,6 @@ class World:
         self._update_interaction_prompts()
         self.camera.update(dt)
 
-        # Update floating notification banners
         self.story.update_notifications(dt)
 
     def _move_axis(self, dx: float, dy: float) -> None:
@@ -265,31 +271,26 @@ class World:
 
             door_name = str(getattr(door, "name", "") or "").strip().lower()
 
-            # Entering a zone from the City
             if self.current_region_name == "city":
                 if door_name not in self.CITY_DOOR_INDEX:
                     continue
 
                 can_enter, reason = self.story.can_access_zone(door_name)
                 if not can_enter:
-                    # Push back player slightly to prevent sticking
                     self.player.y += 12
                     self._monologue(reason)
                     return
 
-                # Enter zone
                 self.current_region_name = door_name
                 self.player.x, self.player.y = self.region.entry_position("south")
                 self._update_camera_bounds()
                 return
 
-            # Exit to City
             if door_name == "exit":
                 self._return_to_city()
                 self._update_camera_bounds()
                 return
 
-            # Minigame doors inside Nightclub
             if door_name in ("stealth", "safecracker"):
                 self._try_enter_club_door(door_name)
                 return
@@ -338,14 +339,12 @@ class World:
 
         player_rect = self.player.rect
 
-        # Check triggers in current region
         for trigger in self.region.triggers:
             if trigger.collides(player_rect):
                 self.active_prompt = trigger.prompt_text
                 self.active_interactable = trigger
                 return
 
-        # Check NPCs in current region (direct rect collision)
         for npc in self.region.npcs:
             if player_rect.colliderect(npc.rect):
                 self.active_prompt = f"[ESPACIO] Hablar con {npc.name}"
@@ -366,20 +365,17 @@ class World:
         interactable = self.active_interactable
         self._clear_movement()
 
-        # 1. Trigger interaction
         if isinstance(interactable, Trigger):
             if interactable.action_fn is not None:
                 interactable.action_fn(self, self.story)
             return
 
-        # 2. NPC interaction
         if isinstance(interactable, NPC):
             self._interact_with_npc(interactable)
 
     def _interact_with_npc(self, npc: NPC) -> None:
         key = npc.dialogue_key
 
-        # Sofia en Oficina
         if key == "sofia_office":
             if not self.story.flags["sofia_office_talked"]:
                 self._start_intro_cutscene()
@@ -387,26 +383,22 @@ class World:
                 self._monologue("Sofia me espera en el museo. Debo encontrar 'La Dama del Lirio'.")
             return
 
-        # Lauren en Oficina
         if key == "lauren_office":
             visit = self.story.get_current_corcho_visit()
             hint = DIALOGUES["lauren_office"]["hints"].get(visit, "Revise las pistas en el corcho, jefe.")
             self.stack.push(DialogueState(self.stack), text=hint, speaker="Lauren")
             return
 
-        # Curador en Museo
         if key == "museum_curator":
             data = DIALOGUES["museum_curator"]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Oficial en Comisaría
         if key == "police_officer":
             data = DIALOGUES["police_officer"]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Morales en Callejón
         if key == "morales_interrogation":
             if not self.story.flags["morales_confronted"]:
                 data = DIALOGUES["morales_interrogation"]
@@ -436,7 +428,6 @@ class World:
                 )
             return
 
-        # Sofia en Club Velvet
         if key == "sofia_club":
             if not self.story.flags["sofia_club_talked"]:
                 data = DIALOGUES["sofia_club"]
@@ -460,7 +451,6 @@ class World:
                 )
             return
 
-        # Canillita en Ciudad
         if key == "canillita":
             if self.story.flags["corcho1_done"] and not self.story.flags["recorte_encontrado"]:
                 data = DIALOGUES["canillita"]["special_c07"]
@@ -481,13 +471,11 @@ class World:
                 self.stack.push(DialogueState(self.stack), text=line, speaker="Canillita")
             return
 
-        # Transeúntes genéricos
         if key in DIALOGUES:
             data = DIALOGUES[key]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Línea de fallback
         self.stack.push(DialogueState(self.stack), text=npc.dialogue())
 
     def _clear_movement(self) -> None:
@@ -496,16 +484,12 @@ class World:
 
     # ── Renderizado del Mundo y UI ───────────────────────────────────────────
 
-    # ── Renderizado del Mundo y UI ───────────────────────────────────────────
-
     def render(self, surface: pygame.Surface) -> None:
-        # 1. Render World & Player
         self.region.render(surface, self.camera)
         self.player.render(surface, self.camera)
 
         font = settings.FONTS["medium"]
 
-        # Region Label (Top-Left)
         if not self.story.notifications:
             reg_text = self.current_region_name.upper()
             rw, rh = font.size(reg_text)
@@ -521,12 +505,10 @@ class World:
                 theme=NOIR_PROMPT_THEME,
             )
             reg_label.render(surface)
-        # Floating Notification Banners (Top Center)
         else:
             notif = self.story.notifications[0]
             max_text_w = settings.VIRTUAL_WIDTH - 60
 
-            # Shared wrap_text helper from src.text_utils
             lines = wrap_text(font, notif["text"], max_text_w)
 
             line_height = font.get_linesize()
@@ -551,7 +533,6 @@ class World:
                 )
                 notif_label.render(surface)
 
-        # 3. Floating Interaction Prompt Badge (Bottom Center)
         if self.active_prompt:
             pw, ph = font.size(self.active_prompt)
             badge_w = pw + 20

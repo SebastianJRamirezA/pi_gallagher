@@ -23,7 +23,7 @@ class Region:
         self.width = self.tilemap.cols * settings.TILE_SIZE
         self.height = self.tilemap.rows * settings.TILE_SIZE
 
-        # Automatically load object layer triggers from Tiled
+        # Load dynamic objects from Tiled
         self._load_triggers_from_map()
 
     def _load_json(self, map_path: pathlib.Path) -> TileMap:
