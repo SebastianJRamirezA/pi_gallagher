@@ -99,6 +99,12 @@ class StealthMinigameState(BaseState):
     """
 
     def enter(self, **enter_params) -> None:
+        # Load and play background stealth music endlessly
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "stealth.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.play(loops=-1)
+
         self.vw: int = settings.VIRTUAL_WIDTH  
         self.vh: int = settings.VIRTUAL_HEIGHT  
 
@@ -132,6 +138,10 @@ class StealthMinigameState(BaseState):
 
         self._build_obstacles()
         self._build_guards()
+
+    def exit(self) -> None:
+        """Stop background music when exiting this state."""
+        pygame.mixer.music.fadeout(500)
 
     def _build_obstacles(self) -> None:
         """Static cover objects the player can hide behind."""
@@ -362,6 +372,7 @@ class StealthMinigameState(BaseState):
         if self.player_entity.collision_rect.colliderect(self.goal):
             self.completed = True
             Timer.clear()
+            pygame.mixer.music.stop()  # Stop music on completion
             from src.story.StoryManager import StoryManager
             story = StoryManager.get_instance()
             for c in ("C09", "C11"):

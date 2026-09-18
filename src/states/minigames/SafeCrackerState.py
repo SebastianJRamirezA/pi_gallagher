@@ -18,6 +18,12 @@ from src.ui.theme import COLOR_ACCENT_RED, COLOR_BRASS, COLOR_MUTED, COLOR_SUCCE
 
 class SafeCrackerState(BaseState):
     def enter(self) -> None:
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "hurry_up.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         self.dial = 0.0
         self.stage = 0
         self.turning = 0
