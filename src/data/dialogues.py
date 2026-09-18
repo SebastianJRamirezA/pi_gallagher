@@ -199,5 +199,28 @@ DIALOGUES: Dict[str, Dict[str, Any]] = {
             ),
         ],
     },
+    # ── Emboscada y Victoria de Niko Stieger (Club Velvet) ──
+    "steiger_ambush": {
+        "speaker": "Niko Stieger",
+        "pages": [
+            "Blackwood dijo que vendrías, detective. Pero no te pagó para salir vivo con esto.",
+        ],
+        "reward_cards": ["C18"],
+    },
+    "steiger_victory": {
+        "speaker": "P.I. Gallagher",
+        "pages": [
+            "Stieger cae noqueado contra el suelo de la bóveda... Su Thompson rueda humeante por las baldosas.",
+            "Tengo el cuadro 'La Dama del Lirio' y los libros de contabilidad. Debo volver a mi oficina para organizar las pruebas finales en el corcho.",
+        ],
+    },
+    # ── Careo Final con Sofia (Museo) ──
+    "sofia_museum": {
+        "speaker": "Sofia Del Roscio",
+        "pages": [
+            "Detective... Veo que logró salir con vida de la guarida de Blackwood.",
+            "¿Recuperó 'La Dama del Lirio'? ¿O acaso vino a mirarme como si ocultara algo?",
+        ],
+    },
 }
 

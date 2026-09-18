@@ -158,12 +158,15 @@ class World:
 
         # 1. Oficina
         office = self.regions["office"]
-        office.npcs.append(NPC(198, 80, "Sofia Del Roscio", dialogue_key="sofia_office", direction="right"))
+        if not self.story.flags.get("sofia_office_talked", False):
+            office.npcs.append(NPC(198, 80, "Sofia Del Roscio", dialogue_key="sofia_office", direction="right"))
         office.npcs.append(NPC(160, 68, "Lauren", dialogue_key="lauren_office", direction="down"))
 
         # 2. Museo
         museum = self.regions["museum"]
         museum.npcs.append(NPC(200, 180, "Curador Lombardi", dialogue_key="museum_curator", direction="down"))
+        if self.story.flags.get("corcho_final_done", False) and not self.story.flags.get("sofia_confronted", False):
+            museum.npcs.append(NPC(240, 180, "Sofia Del Roscio", dialogue_key="sofia_confrontation", direction="down"))
 
         # 3. Comisaría
         police = self.regions["police_station"]
@@ -175,7 +178,8 @@ class World:
 
         # 5. Nightclub
         club = self.regions["nightclub"]
-        club.npcs.append(NPC(280, 180, "Sofia Del Roscio", dialogue_key="sofia_club", direction="left"))
+        if not self.story.flags.get("sofia_club_talked", False):
+            club.npcs.append(NPC(280, 180, "Sofia Del Roscio", dialogue_key="sofia_club", direction="left"))
 
         # 6. Ciudad
         city = self.regions["city"]
@@ -258,6 +262,17 @@ class World:
     # ── Actualización de Cuadro y Movimiento ─────────────────────────────────
 
     def update(self, dt: float) -> None:
+        # Check Stieger ambush trigger in Nightclub
+        if (
+            self.current_region_name == "nightclub"
+            and self.story.flags.get("safecracker_completed", False)
+            and not self.story.flags.get("steiger_ambushed", False)
+        ):
+            if any(self.player.held.values()):
+                self._clear_movement()
+                self._trigger_steiger_ambush()
+                return
+
         # Movement calculation
         dx = float(self.player.held["move_right"] - self.player.held["move_left"])
         dy = float(self.player.held["move_down"] - self.player.held["move_up"])
@@ -320,12 +335,23 @@ class World:
                 self.current_region_name = door_name
                 self.player.x, self.player.y = self.region.entry_position("south")
                 self._update_camera_bounds()
+                self._populate_npcs()
                 return
 
             # Exit to City
             if door_name == "exit":
+                if (
+                    self.current_region_name == "nightclub"
+                    and self.story.flags.get("safecracker_completed", False)
+                    and not self.story.flags.get("steiger_ambushed", False)
+                ):
+                    self._clear_movement()
+                    self._trigger_steiger_ambush()
+                    return
+
                 self._return_to_city()
                 self._update_camera_bounds()
+                self._populate_npcs()
                 return
 
             # Minigame doors inside Nightclub
@@ -354,9 +380,11 @@ class World:
             ):
                 self.current_region_name = "city"
                 self.player.x, self.player.y = x, y
+                self._populate_npcs()
                 return
         self.current_region_name = "city"
         self.player.x, self.player.y = door_center.x - 1, door_center.y + 20 - 12
+        self._populate_npcs()
 
     @staticmethod
     def _door_collides_rect(player_rect: pygame.Rect, door) -> bool:
@@ -428,8 +456,13 @@ class World:
 
         # Lauren en Oficina
         if key == "lauren_office":
-            visit = self.story.get_current_corcho_visit()
-            hint = DIALOGUES["lauren_office"]["hints"].get(visit, "Revise las pistas en el corcho, jefe.")
+            if self.story.flags.get("corcho_final_done", False):
+                hint = "Jefe, ya lo sabemos todo. Sofia nos contrató para recuperar un cuadro que ella misma robó. Vaya al Museo a confrontarla."
+            elif self.story.flags.get("steiger_defeated", False):
+                hint = "Jefe, tiene los libros de contabilidad y el cuadro. Conecte las pruebas en la pizarra de corcho para descubrir a la socia de Blackwood."
+            else:
+                visit = self.story.get_current_corcho_visit()
+                hint = DIALOGUES["lauren_office"]["hints"].get(visit, "Revise las pistas en el corcho, jefe.")
             self.stack.push(DialogueState(self.stack), text=hint, speaker="Lauren")
             return
 
@@ -437,6 +470,22 @@ class World:
         if key == "museum_curator":
             data = DIALOGUES["museum_curator"]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
+            return
+
+        # Sofia en Museo (Careo Final)
+        if key == "sofia_confrontation":
+            if not self.story.flags.get("sofia_confronted", False):
+                def on_sofia_confrontation_complete():
+                    self.story.flags["sofia_confronted"] = True
+                    self._show_case_closed_ending()
+
+                self.stack.push(
+                    ConfrontationState(self.stack),
+                    confrontation_id="sofia",
+                    on_complete=on_sofia_confrontation_complete,
+                )
+            else:
+                self._show_case_closed_ending()
             return
 
         # Oficial en Comisaría
@@ -458,11 +507,14 @@ class World:
                             self.story.flags["morales_confronted"] = True
                         
                         from src.states.minigames.CombatState import CombatState
-                        self.stack.push(
-                            CombatState(self.stack),
-                            world_state=self,
-                            on_complete=on_combat_complete
-                        )
+                        params = {
+                            "enemy_id": "bandit",
+                            "arena_layout": "alley",
+                            "on_victory_callback": on_combat_complete,
+                            "player_health": 3,
+                            "world_state": self,
+                        }
+                        self.stack.push(CombatState(self.stack), params=params)
 
                     self.stack.push(
                         DialogueState(self.stack),
@@ -537,6 +589,74 @@ class World:
 
         # Línea de fallback
         self.stack.push(DialogueState(self.stack), text=npc.dialogue())
+
+    def _trigger_steiger_ambush(self) -> None:
+        """Trigger Niko Stieger's ambush upon attempting to leave after the safe minigame."""
+        self._clear_movement()
+        self.story.flags["steiger_ambushed"] = True
+        self.story.add_card("C18")
+
+        def on_ambush_dialogue():
+            from src.states.minigames.CombatState import CombatState
+            params = {
+                "enemy_id": "steiger",
+                "arena_layout": "club_basement",
+                "on_victory_callback": self._on_steiger_victory,
+                "player_health": 3,
+                "world_state": self,
+            }
+            self.stack.push(CombatState(self.stack), params=params)
+
+        data = DIALOGUES.get("steiger_ambush", {
+            "speaker": "Niko Stieger",
+            "pages": [
+                "Blackwood dijo que vendrías, detective. Pero no te pagó para salir vivo con esto."
+            ],
+        })
+        self.stack.push(
+            DialogueState(self.stack),
+            text=data["pages"],
+            speaker=data["speaker"],
+            on_finish=on_ambush_dialogue,
+        )
+
+    def _on_steiger_victory(self) -> None:
+        """Called when Gallagher defeats Niko Stieger in combat."""
+        self.story.flags["steiger_defeated"] = True
+
+        def on_victory_finish():
+            self._clear_movement()
+            self._populate_npcs()
+            self.story.push_notification("Stieger derrotado. Regresa a tu oficina para examinar el corcho.")
+
+        data = DIALOGUES.get("steiger_victory", {
+            "speaker": "P.I. Gallagher",
+            "pages": [
+                "Stieger cae noqueado contra el suelo de la bóveda... Su Thompson rueda humeante por las baldosas.",
+                "Tengo el cuadro 'La Dama del Lirio' y los libros de contabilidad. Debo volver a mi oficina para organizar las pruebas finales en el corcho.",
+            ],
+        })
+        self.stack.push(
+            DialogueState(self.stack),
+            text=data["pages"],
+            speaker=data["speaker"],
+            on_finish=on_victory_finish,
+        )
+
+    def _show_case_closed_ending(self) -> None:
+        """Display the closing narrative epilogue after defeating Sofia in the confrontation."""
+        ending_pages = [
+            "Sofia Del Roscio baja la mirada, derrotada por el peso irrefutable de las pruebas.",
+            "'Creí que la policía nunca lo entendería... y que tú serías más fácil de manejar', susurra con amargura.",
+            "La llamada al Sargento Bianchi sella el destino del Museo Del Roscio y del imperio clandestino de Cornelius Blackwood.",
+            "Caso cerrado. 'La Dama del Lirio' vuelve al lugar que le corresponde.",
+        ]
+        self.stack.push(
+            DialogueState(self.stack),
+            text=ending_pages,
+            speaker="P.I. Gallagher",
+            on_finish=lambda: self.story.push_notification("¡CASO RESUELTO! Fin de la investigación."),
+        )
 
     def _clear_movement(self) -> None:
         for key in self.player.held:
