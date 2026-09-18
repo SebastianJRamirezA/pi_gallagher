@@ -253,7 +253,7 @@ class World:
             return
         self._clear_movement()
         pygame.mixer.music.stop()
-        self.stack.push(SafeCrackerState(self.stack))
+        self.stack.push(PoliceArchiveState(self.stack))
         self.bgm_playing = False
 
     def _try_enter_club_door(self, door_type: str) -> None:
