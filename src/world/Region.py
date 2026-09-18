@@ -1,13 +1,15 @@
 import pathlib
+from typing import Optional
 
 import pygame
 from gale.tilemap import TileMap, load_tiled_map
 
 import settings
+from src.world.Trigger import Trigger
 
 
 class Region:
-    def __init__(self, name: str, map_path: pathlib.Path | None = None) -> None:
+    def __init__(self, name: str, map_path: Optional[pathlib.Path] = None) -> None:
         self.name = name
         self.npcs = []
         self.triggers = []
@@ -21,8 +23,37 @@ class Region:
         self.width = self.tilemap.cols * settings.TILE_SIZE
         self.height = self.tilemap.rows * settings.TILE_SIZE
 
+        # Automatically load object layer triggers from Tiled
+        self._load_triggers_from_map()
+
     def _load_json(self, map_path: pathlib.Path) -> TileMap:
         return load_tiled_map(str(map_path))
+
+    def _load_triggers_from_map(self) -> None:
+        """Parse object layers (Triggers, Doors) from Tiled into Trigger objects."""
+        trigger_layers = ["Triggers", "Doors"]
+
+        for layer_name in trigger_layers:
+            objects = self.tilemap.object_layers.get(layer_name, [])
+            for obj in objects:
+                obj_name = str(getattr(obj, "name", "") or "").strip().lower()
+                if not obj_name:
+                    continue
+
+                width = getattr(obj, "width", 16) or 16
+                height = getattr(obj, "height", 16) or 16
+                prompt_text = getattr(obj, "prompt_text", "")
+
+                trigger = Trigger(
+                    trigger_id=obj_name,
+                    x=obj.x,
+                    y=obj.y,
+                    width=width,
+                    height=height,
+                    trigger_type="door" if layer_name == "Doors" else "interaction",
+                    prompt_text=prompt_text,
+                )
+                self.triggers.append(trigger)
 
     def _create_center(self) -> TileMap:
         tilemap = TileMap(settings.TILE_SIZE, settings.TILE_SIZE, settings.TILE_WIDTH, settings.TILE_HEIGHT)
@@ -74,7 +105,6 @@ class Region:
         )
 
     def _walkable_tile(self, col: int, row: int) -> bool:
-        # Construct the candidate foot box (16x16) at tile position
         rect = pygame.Rect(
             col * settings.TILE_SIZE + 1,
             row * settings.TILE_SIZE + 12,
@@ -97,7 +127,6 @@ class Region:
         if not self._walkable_tile(col, row):
             col, row = self._edge_tile(side)
 
-        # Return (x, y) sprite origin corresponding to foot tile collision box
         return col * settings.TILE_SIZE, row * settings.TILE_SIZE
 
     def _edge_tile(self, side: str) -> tuple[int, int]:

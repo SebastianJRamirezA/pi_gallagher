@@ -76,78 +76,39 @@ class World:
     # ── Configuración de Triggers ────────────────────────────────────────────
 
     def _setup_triggers(self) -> None:
-        """Register specific interactive triggers per region."""
-        # 1. Oficina: Pizarra de Corcho
-        office = self.regions["office"]
-        office.triggers.append(
-            Trigger(
-                trigger_id="corkboard",
-                x=220,
-                y=50,
-                width=44,
-                height=26,
-                trigger_type="corkboard",
-                prompt_text="[ESPACIO] Examinar Pizarra de Corcho",
-                action_fn=self._open_corkboard,
-            )
-        )
+        """Bind dynamic actions and prompts to tilemap-loaded triggers."""
+        # Mapping table for custom trigger prompts and action callbacks
+        trigger_configs = {
+            "corkboard": {
+                "prompt": "[ESPACIO] Examinar Pizarra de Corcho",
+                "action": self._open_corkboard,
+            },
+            "empty_frame": {
+                "prompt": "[ESPACIO] Inspeccionar marco vacío robado",
+                "action": self._inspect_museum_frame,
+            },
+            "archive": {
+                "prompt": "[ESPACIO] Infiltrarse en archivo policial",
+                "action": self._start_archive_minigame,
+            },
+            "stealth": {
+                "prompt": "[ESPACIO] Entrar a oficinas traseras (Sigilo)",
+                "action": lambda w, s: self._try_enter_club_door("stealth"),
+            },
+            "safecracker": {
+                "prompt": "[ESPACIO] Forzar caja fuerte de la bóveda",
+                "action": lambda w, s: self._try_enter_club_door("safecracker"),
+            },
+        }
 
-        # 2. Museo: Marco vacío robado
-        museum = self.regions["museum"]
-        museum.triggers.append(
-            Trigger(
-                trigger_id="empty_frame",
-                x=224,
-                y=48,
-                width=48,
-                height=28,
-                trigger_type="interaction",
-                prompt_text="[ESPACIO] Inspeccionar marco vacío robado",
-                action_fn=self._inspect_museum_frame,
-            )
-        )
-
-        # 3. Comisaría: Acceso al archivo policial en el sótano
-        police = self.regions["police_station"]
-        police.triggers.append(
-            Trigger(
-                trigger_id="archive",
-                x=320,
-                y=96,
-                width=40,
-                height=36,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Infiltrarse en archivo policial",
-                action_fn=self._start_archive_minigame,
-            )
-        )
-
-        # 4. Nightclub: Triggers visuales para las puertas de Stealth y Safecracker
-        nightclub = self.regions["nightclub"]
-        nightclub.triggers.append(
-            Trigger(
-                trigger_id="stealth_prompt",
-                x=385,
-                y=8,
-                width=90,
-                height=40,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Entrar a oficinas traseras (Sigilo)",
-                action_fn=lambda w, s: self._try_enter_club_door("stealth"),
-            )
-        )
-        nightclub.triggers.append(
-            Trigger(
-                trigger_id="safecracker_prompt",
-                x=98,
-                y=32,
-                width=32,
-                height=24,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Forzar caja fuerte de la bóveda",
-                action_fn=lambda w, s: self._try_enter_club_door("safecracker"),
-            )
-        )
+        for region in self.regions.values():
+            for trigger in region.triggers:
+                if trigger.trigger_id in trigger_configs:
+                    cfg = trigger_configs[trigger.trigger_id]
+                    # Assign defaults if prompt wasn't set inside Tiled
+                    if not trigger.prompt_text:
+                        trigger.prompt_text = cfg["prompt"]
+                    trigger.action_fn = cfg["action"]
 
     # ── Población de NPCs ───────────────────────────────────────────────────
 
