@@ -222,7 +222,9 @@ class World:
 
     def _open_corkboard(self, world: Any, story: StoryManager) -> None:
         self._clear_movement()
+        pygame.mixer.music.stop()
         self.stack.push(CorkboardState(self.stack))
+        self.bgm_playing = False
 
     def _inspect_museum_frame(self, world: Any, story: StoryManager) -> None:
         self._clear_movement()
@@ -499,11 +501,13 @@ class World:
                         on_finish=on_confession_end,
                     )
 
+                pygame.mixer.music.stop()
                 self.stack.push(
                     ConfrontationState(self.stack),
                     confrontation_id="morales",
                     on_complete=on_confrontation_complete
                 )
+                self.bgm_playing = False
             else:
                 self.stack.push(
                     DialogueState(self.stack),

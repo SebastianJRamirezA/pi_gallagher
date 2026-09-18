@@ -22,6 +22,12 @@ class ConfrontationState(BaseState):
         self.story = StoryManager.get_instance()
         self.on_complete = on_complete
 
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "investigate.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         # Select confrontation
         if confrontation_id == "morales":
             self.phases = MORALES_CONFRONTATION
@@ -256,6 +262,7 @@ class ConfrontationState(BaseState):
         if self.phase_substate == "success_reaction":
             self.current_phase_index += 1
             if self.current_phase_index >= len(self.active_phases):
+                pygame.mixer.music.stop()
                 self.state_machine.pop()
                 if self.on_complete:
                     self.on_complete()
