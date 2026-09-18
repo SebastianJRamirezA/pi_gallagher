@@ -1,4 +1,4 @@
-"""A deliberately quiet, audio-visual combination safe game."""
+"""A 1930s vintage safe game using Gale UI elements and noir aesthetics."""
 
 import array
 import math
@@ -8,15 +8,22 @@ import pygame
 
 from gale.game import Game
 from gale.input_handler import InputData
-from gale.text import render_text
 from gale.timer import Timer
 from gale.state import BaseState
+from gale.ui import Label, Panel, Theme
 
 import settings
+from src.ui.theme import COLOR_ACCENT_RED, COLOR_BRASS, COLOR_MUTED, COLOR_SUCCESS
 
 
 class SafeCrackerState(BaseState):
     def enter(self) -> None:
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "hurry_up.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         self.dial = 0.0
         self.stage = 0
         self.turning = 0
@@ -24,7 +31,7 @@ class SafeCrackerState(BaseState):
         self.overshot = False
         self.stutter_time = 0.0
         self.click_number = -1
-        self.message = "Listen for the lock. Set the first number."
+        self.message = "Escucha la cerradura. Ajusta el primer número."
         self.complete = False
         self.click_sound = self._make_tone(170)
         self.heavy_click_sound = self._make_tone(105)
@@ -33,14 +40,15 @@ class SafeCrackerState(BaseState):
 
         self.timer = 60.0
 
-        self.COLOR_BACKGROUND = (18, 20, 24)
-        self.COLOR_PANEL = (31, 33, 38)
-        self.COLOR_BRASS = (190, 147, 73)
-        self.COLOR_STEEL = (116, 124, 132)
-        self.COLOR_TEXT = (218, 214, 198)
-        self.COLOR_MUTED = (119, 125, 130)
-        self.COLOR_DANGER = (196, 72, 57)
-        self.COLOR_SUCCESS = (105, 173, 116)
+        # Colors for 1930s-1940s Black & Gold Vintage Safe Aesthetic
+        self.COLOR_BACKGROUND = (12, 12, 14)
+        self.COLOR_SAFE_BODY = (24, 25, 28)
+        self.COLOR_SAFE_BORDER = (16, 17, 19)
+        self.COLOR_GOLD = (212, 168, 75)
+        self.COLOR_GOLD_DARK = (140, 105, 35)
+        self.COLOR_STEEL = (110, 116, 122)
+        self.COLOR_STEEL_DARK = (45, 48, 52)
+        self.COLOR_TEXT = (225, 218, 200)
 
         self.DIAL_SPEED = 72.0
         self.FINE_DIAL_SPEED = 18.0
@@ -57,6 +65,111 @@ class SafeCrackerState(BaseState):
 
         Timer.every(1, decrement_timer)
 
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        """Construct static safe body, panels, and labels using gale.ui."""
+        safe_x, safe_y = 20, 8
+        safe_w, safe_h = settings.VIRTUAL_WIDTH - 40, 200
+
+        # 1. Main Safe Body Frame Panel
+        self.safe_theme = Theme(
+            background_color=pygame.Color(*self.COLOR_SAFE_BODY),
+            border_color=pygame.Color(*self.COLOR_GOLD_DARK),
+            border_width=2,
+        )
+        self.safe_panel = Panel(safe_x, safe_y, safe_w, safe_h, theme=self.safe_theme)
+
+        # 2. Top Left Metadata (Perfectly aligned & subordinated)
+        self.lbl_title = Label(
+            safe_x + 16,
+            safe_y + 12,
+            "CAJA FUERTE",
+            font=settings.FONTS["large"],
+            color=pygame.Color(*self.COLOR_GOLD),
+            theme=self.safe_theme,
+        )
+
+        self.lbl_tumbler = Label(
+            safe_x + 16,
+            safe_y + 34,
+            "DISCO 1 / 3",
+            font=settings.FONTS["medium"],
+            color=pygame.Color(*self.COLOR_GOLD_DARK),
+            theme=self.safe_theme,
+        )
+
+        # 3. Top Right Metadata (Perfectly right-aligned with proper margin)
+        self.lbl_stress = Label(
+            safe_x + safe_w - 108,
+            safe_y + 12,
+            "ESTRÉS",
+            font=settings.FONTS["medium"],
+            color=pygame.Color(*self.COLOR_GOLD_DARK),
+            theme=self.safe_theme,
+        )
+
+        self.lbl_timer = Label(
+            safe_x + safe_w - 108,
+            safe_y + 42,
+            f"TIEMPO: {int(self.timer)}s",
+            font=settings.FONTS["medium"],
+            color=pygame.Color(*self.COLOR_GOLD_DARK),
+            theme=self.safe_theme,
+        )
+
+        # 4. Central Digital Display Box for Dial Marker ("00")
+        box_w, box_h = 36, 18
+        box_x = settings.VIRTUAL_WIDTH // 2 - box_w // 2
+        box_y = safe_y + safe_h - 26
+
+        self.dial_box_panel = Panel(
+            box_x, box_y, box_w, box_h,
+            theme=Theme(
+                background_color=pygame.Color(14, 15, 18),
+                border_color=pygame.Color(*self.COLOR_GOLD_DARK),
+                border_width=1,
+            )
+        )
+
+        self.lbl_dial_val = Label(
+            box_x + 10,
+            box_y + 2,
+            "00",
+            font=settings.FONTS["medium"],
+            color=pygame.Color(*self.COLOR_GOLD),
+            theme=self.safe_theme,
+        )
+
+        # 5. Dedicated Instruction Panel (Below main safe body frame)
+        inst_y = safe_y + safe_h + 6
+        inst_h = 24
+        self.inst_panel = Panel(
+            safe_x, inst_y, safe_w, inst_h,
+            theme=Theme(
+                background_color=pygame.Color(18, 19, 22),
+                border_color=pygame.Color(*self.COLOR_GOLD_DARK),
+                border_width=1,
+            )
+        )
+
+        self.lbl_message = Label(
+            safe_x + 12,
+            inst_y + 5,
+            self.message,
+            font=settings.FONTS["medium"],
+            color=pygame.Color(*self.COLOR_TEXT),
+            theme=self.safe_theme,
+        )
+
+        self.lbl_controls = Label(
+            safe_x + 12,
+            inst_y + inst_h + 6,
+            "Flechitas: Moverse  |  SHIFT: Aumentar precisión  |  ESPACIO: Fijar disco",
+            font=settings.FONTS["small"],
+            color=COLOR_MUTED,
+            theme=self.safe_theme,
+        )
 
     def _make_tone(self, frequency: int, duration: float = 0.055):
         """Create a short metal-like cue without requiring an asset file."""
@@ -78,6 +191,7 @@ class SafeCrackerState(BaseState):
 
     def update(self, dt: float) -> None:
         if self.complete:
+            pygame.mixer.music.stop()
             self.state_machine.pop()
             return
 
@@ -91,7 +205,7 @@ class SafeCrackerState(BaseState):
             if not self.overshot and self._passed_target(previous, self.dial, self.turning):
                 self.overshot = True
                 self.stage = 0
-                self.message = "Too far. Complete the turn to reset this number."
+                self.message = "Demasiado lejos. Da el giro completo para reiniciar."
                 self._play(self.alarm_sound)
             elif not self.overshot and current_number != self.click_number:
                 self.click_number = current_number
@@ -104,10 +218,17 @@ class SafeCrackerState(BaseState):
             self.dial = 0.0
             self.overshot = False
             self.click_number = 0
-            self.message = "Reset. Approach the number more carefully."
+            self.message = "Reiniciado. Acércate con más cuidado."
 
         if self.timer <= 0:
             Timer.clear()
+
+        # Update dynamic labels
+        self.lbl_tumbler.set_text(f"DISCO {min(self.stage + 1, 3)} / 3")
+        self.lbl_dial_val.set_text(f"{self._dial_number():02d}")
+        self.lbl_message.set_text(self.message)
+        self.lbl_message.color = COLOR_ACCENT_RED if self.overshot else pygame.Color(*self.COLOR_TEXT)
+        self.lbl_timer.set_text(f"TIEMPO: {max(0, int(self.timer))}s")
 
     def _dial_number(self) -> int:
         return int(round(self.dial / 3.6)) % 100
@@ -150,52 +271,120 @@ class SafeCrackerState(BaseState):
                 for c in ("C15", "C16", "C17"):
                     story.add_card(c)
                 story.flags["safecracker_completed"] = True
-                self.message = "The tumblers fall. The safe is open."
+                self.message = "Los pestillos ceden. La caja fuerte está abierta."
+                pygame.mixer_music.stop()
                 self.state_machine.pop()
             else:
                 self.dial = 0.0
                 self.click_number = -1
-                self.message = "Good. The next tumbler is listening."
+                self.message = "Bien. El siguiente pestillo escucha."
         else:
-            self.message = "That is not the number. Move closer and listen."
+            self.message = "Ese no es el número. Acércate más y escucha."
+
+    def _render_filigree(self, surface: pygame.Surface, x: int, y: int, flip_x: bool = False, flip_y: bool = False) -> None:
+        """Draw decorative 1930s art-deco gold corner ornaments on the safe door."""
+        sx = -1 if flip_x else 1
+        sy = -1 if flip_y else 1
+        points = [
+            (x, y),
+            (x + 12 * sx, y),
+            (x + 12 * sx, y + 2 * sy),
+            (x + 2 * sx, y + 2 * sy),
+            (x + 2 * sx, y + 12 * sy),
+            (x, y + 12 * sy)
+        ]
+        pygame.draw.polygon(surface, self.COLOR_GOLD_DARK, points)
+        pygame.draw.polygon(surface, self.COLOR_GOLD, [(p[0] + sx, p[1] + sy) for p in points[:4]])
+        pygame.draw.line(surface, self.COLOR_GOLD, (x + 4 * sx, y + 4 * sy), (x + 8 * sx, y + 8 * sy), 1)
 
     def render(self, surface: pygame.Surface) -> None:
         surface.fill(self.COLOR_BACKGROUND)
-        center = (settings.VIRTUAL_WIDTH // 2, 134)
-        pygame.draw.rect(surface, self.COLOR_PANEL, (26, 20, 428, 230), border_radius=4)
-        pygame.draw.circle(surface, (67, 64, 58), center, 91)
-        pygame.draw.circle(surface, (29, 30, 33), center, 82)
-        pygame.draw.circle(surface, self.COLOR_STEEL, center, 75, 2)
 
+        # 1. Outer Safe Body Panel Frame & Inner Decorative Insets
+        self.safe_panel.render(surface)
+
+        sp_x, sp_y = self.safe_panel.x, self.safe_panel.y
+        sp_w, sp_h = self.safe_panel.width, self.safe_panel.height
+
+        # Inner Decorative Gold Frame Line
+        pygame.draw.rect(
+            surface,
+            self.COLOR_GOLD_DARK,
+            (sp_x + 5, sp_y + 5, sp_w - 10, sp_h - 10),
+            1
+        )
+
+        # Corner Filigree Accents
+        self._render_filigree(surface, sp_x + 8, sp_y + 8)
+        self._render_filigree(surface, sp_x + sp_w - 8, sp_y + 8, flip_x=True)
+        self._render_filigree(surface, sp_x + 8, sp_y + sp_h - 8, flip_y=True)
+        self._render_filigree(surface, sp_x + sp_w - 8, sp_y + sp_h - 8, flip_x=True, flip_y=True)
+
+        # Decorative Heavy Door Hinges (Right side)
+        pygame.draw.rect(surface, self.COLOR_STEEL_DARK, (sp_x + sp_w - 3, sp_y + 30, 7, 24), border_radius=2)
+        pygame.draw.rect(surface, self.COLOR_GOLD_DARK, (sp_x + sp_w - 2, sp_y + 32, 5, 20), border_radius=1)
+        pygame.draw.rect(surface, self.COLOR_STEEL_DARK, (sp_x + sp_w - 3, sp_y + sp_h - 54, 7, 24), border_radius=2)
+        pygame.draw.rect(surface, self.COLOR_GOLD_DARK, (sp_x + sp_w - 2, sp_y + sp_h - 52, 5, 20), border_radius=1)
+
+        # 2. Central Metallic Dial Assembly
+        center = (settings.VIRTUAL_WIDTH // 2, 102)
+        
+        # Outer Bezel & Brass Rings
+        pygame.draw.circle(surface, self.COLOR_STEEL_DARK, center, 68)
+        pygame.draw.circle(surface, self.COLOR_GOLD_DARK, center, 65)
+        pygame.draw.circle(surface, (18, 19, 21), center, 61)
+        pygame.draw.circle(surface, self.COLOR_GOLD, center, 56, 1)
+
+        # Brass Tick Marks
         for number in range(0, 100, 5):
             angle = math.radians(number * 3.6 - 90)
-            inner = 66 if number % 10 else 61
-            outer = 72
+            inner = 48 if number % 10 else 43
+            outer = 54
             start = (center[0] + math.cos(angle) * inner, center[1] + math.sin(angle) * inner)
             end = (center[0] + math.cos(angle) * outer, center[1] + math.sin(angle) * outer)
-            pygame.draw.line(surface, self.COLOR_BRASS, start, end, 2 if number % 10 == 0 else 1)
+            pygame.draw.line(surface, self.COLOR_GOLD, start, end, 2 if number % 10 == 0 else 1)
 
+        # Dial Center Knob & Pointer Needle
         needle_angle = math.radians(self.dial - 90)
-        needle_length = 65 + (4 if self.stutter_time > 0 else 0)
+        needle_length = 49 + (3 if self.stutter_time > 0 else 0)
         needle = (center[0] + math.cos(needle_angle) * needle_length, center[1] + math.sin(needle_angle) * needle_length)
-        pygame.draw.line(surface, self.COLOR_BRASS, center, needle, 3)
-        pygame.draw.circle(surface, self.COLOR_BRASS, center, 7)
+        pygame.draw.line(surface, self.COLOR_GOLD, center, needle, 2)
+        pygame.draw.circle(surface, self.COLOR_GOLD, center, 10)
+        pygame.draw.circle(surface, self.COLOR_GOLD_DARK, center, 10, 1)
+        pygame.draw.circle(surface, self.COLOR_STEEL_DARK, center, 4)
 
-        render_text(surface, "THE QUIET DIAL", settings.FONTS["large"], 30, 32, self.COLOR_TEXT)
-        render_text(surface, f"TUMBLER  {min(self.stage + 1, 3)} / 3", settings.FONTS["medium"], 30, 72, self.COLOR_MUTED)
-        render_text(surface, f"{self._dial_number():02d}", settings.FONTS["large"], center[0], 224, self.COLOR_TEXT, center=True)
-        render_text(surface, self.message, settings.FONTS["medium"], 30, 238, self.COLOR_DANGER if self.overshot else self.COLOR_TEXT)
+        # Top Center Fixed Indicator Arrow
+        indicator_pts = [
+            (center[0], center[1] - 62),
+            (center[0] - 4, center[1] - 68),
+            (center[0] + 4, center[1] - 68)
+        ]
+        pygame.draw.polygon(surface, self.COLOR_GOLD, indicator_pts)
 
+        # 3. Separate Panels & Labels
+        self.dial_box_panel.render(surface)
+        self.inst_panel.render(surface)
+
+        self.lbl_title.render(surface)
+        self.lbl_tumbler.render(surface)
+        self.lbl_dial_val.render(surface)
+        self.lbl_message.render(surface)
+        self.lbl_stress.render(surface)
+        self.lbl_timer.render(surface)
+        self.lbl_controls.render(surface)
+
+        # 4. Stress Meter Bar (Aligned under ESTRÉS label on the right)
         stress = 0.0 if self.complete else min(1.0, max(0.0, (5.0 - self._target_distance()) / 5.0))
         if self.overshot:
             stress = 1.0
-        pygame.draw.rect(surface, (53, 50, 48), (345, 72, 92, 9))
-        pygame.draw.rect(surface, self.COLOR_DANGER if stress > 0.8 else self.COLOR_BRASS, (345, 72, int(92 * stress), 9))
-        render_text(surface, "STRESS", settings.FONTS["medium"], 345, 55, self.COLOR_MUTED)
-
-        render_text(surface, "TIME: " + str(self.timer), settings.FONTS["medium"], 345, 105, self.COLOR_MUTED)
-
-        render_text(surface, "arrows  rotate     SHIFT  fine     SPACE  set", settings.FONTS["medium"], 30, 260, self.COLOR_MUTED)
+        
+        bar_x = sp_x + sp_w - 108
+        bar_y = sp_y + 26
+        pygame.draw.rect(surface, (38, 32, 28), (bar_x, bar_y, 90, 7), border_radius=1)
+        if stress > 0:
+            bar_color = COLOR_ACCENT_RED if stress > 0.8 else self.COLOR_GOLD
+            pygame.draw.rect(surface, bar_color, (bar_x, bar_y, int(90 * stress), 7), border_radius=1)
+        pygame.draw.rect(surface, self.COLOR_GOLD_DARK, (bar_x, bar_y, 90, 7), 1, border_radius=1)
 
     def on_input(self, input_id: str, input_data: InputData) -> None:
         if input_id == "quit" and input_data.pressed:

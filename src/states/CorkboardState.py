@@ -39,6 +39,12 @@ from src.ui import CardButton, CardGridContainer, ModalOverlay
 
 class CorkboardState(BaseState):
     def enter(self) -> None:
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "investigate.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         self.story = StoryManager.get_instance()
         self.visit = self.story.get_current_corcho_visit()
 
@@ -505,6 +511,7 @@ class CorkboardState(BaseState):
         if self.details_active:
             self._close_details()
             return
+        pygame.mixer.music.stop()
         self.state_machine.pop()
 
     def update(self, dt: float) -> None:

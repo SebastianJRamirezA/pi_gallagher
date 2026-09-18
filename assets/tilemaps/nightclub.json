@@ -141,9 +141,32 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"NPCs",
+         "objects":[
+                {
+                 "height":0,
+                 "id":16,
+                 "name":"sofia_club",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":192.613973444,
+                 "y":63.368864889
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":16,
+ "nextlayerid":7,
+ "nextobjectid":17,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2-2-geb83ddb9",

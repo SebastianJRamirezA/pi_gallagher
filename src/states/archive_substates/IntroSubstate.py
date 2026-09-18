@@ -8,56 +8,39 @@ Displays typewriter-effect text setting the scene for Lauren's infiltration.
 import pygame
 
 from gale.state import BaseState
-from gale.input_handler import InputData
 from gale.text import render_text
 
 import settings
 from src.data.archive_data import COLORS, INTRO_TEXT
+from src.text_utils import TypewriterEffect
 
 
 class IntroSubstate(BaseState):
     def __init__(self, state_machine, parent_state):
         super().__init__(state_machine)
         self.parent = parent_state
+        self.typewriter = TypewriterEffect(char_speed=0.035)
 
     def enter(self, **kwargs):
-        self.full_text = INTRO_TEXT
-        self.char_index = 0
-        self.total_chars = len(self.full_text)
-        self.char_timer = 0.0
-        self.CHAR_SPEED = 0.035
-        self.finished_typing = False
+        self.typewriter.set_text(INTRO_TEXT)
         self.alpha = 0.0
 
     def update(self, dt):
-        # Fade in
         if self.alpha < 255:
             self.alpha = min(255, self.alpha + 200 * dt)
 
-        # Typewriter effect
-        if not self.finished_typing:
-            self.char_timer += dt
-            while (
-                self.char_timer >= self.CHAR_SPEED
-                and self.char_index < self.total_chars
-            ):
-                self.char_timer -= self.CHAR_SPEED
-                self.char_index += 1
-            if self.char_index >= self.total_chars:
-                self.finished_typing = True
+        self.typewriter.update(dt)
 
     def on_input(self, input_id, input_data):
         if input_id == "space" and input_data.pressed:
-            if not self.finished_typing:
-                self.char_index = self.total_chars
-                self.finished_typing = True
+            if not self.typewriter.finished:
+                self.typewriter.complete()
             else:
                 self.state_machine.change("phase_a")
 
     def render(self, surface):
         surface.fill(COLORS["background"])
 
-        # Title
         render_text(
             surface,
             "ARCHIVO DE LA COMISARÍA",
@@ -69,7 +52,6 @@ class IntroSubstate(BaseState):
             shadowed=True,
         )
 
-        # Subtitle
         render_text(
             surface,
             "— Sótano —",
@@ -80,10 +62,7 @@ class IntroSubstate(BaseState):
             center=True,
         )
 
-        # Narrative text with typewriter effect
-        visible_text = self.full_text[: self.char_index]
-        visible_lines = visible_text.split("\n")
-
+        visible_lines = self.typewriter.visible_text.split("\n")
         y = 72
         for line in visible_lines:
             if line:
@@ -97,8 +76,7 @@ class IntroSubstate(BaseState):
                 )
             y += 18
 
-        # Prompt
-        if self.finished_typing:
+        if self.typewriter.finished:
             render_text(
                 surface,
                 "ESPACIO para continuar",
@@ -109,7 +87,6 @@ class IntroSubstate(BaseState):
                 center=True,
             )
 
-        # Fade-in overlay
         if self.alpha < 255:
             overlay = pygame.Surface(
                 (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT), pygame.SRCALPHA

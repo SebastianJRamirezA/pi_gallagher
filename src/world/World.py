@@ -6,12 +6,14 @@ conditional triggers, dynamic NPCs, and narrative progression via StoryManager.
 """
 
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Callable
+import random
 
 import pygame
 from gale.camera import Camera
 from gale.state import StateStack
 from gale.text import render_text
+from gale.timer import Timer
 
 from gale.ui import Label, Panel
 import settings
@@ -31,6 +33,19 @@ from src.text_utils import wrap_text
 class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
+
+    # Configuration map linking dialogue keys to display names and default facing directions
+    NPC_CONFIGS = {
+        "sofia_office": {"display_name": "Sofia Del Roscio", "direction": "right"},
+        "lauren_office": {"display_name": "Lauren", "direction": "down"},
+        "museum_curator": {"display_name": "Curador Lombardi", "direction": "down"},
+        "police_officer": {"display_name": "Sargento Bianchi", "direction": "down"},
+        "morales_interrogation": {"display_name": "Guardia Morales", "direction": "down"},
+        "sofia_club": {"display_name": "Sofia Del Roscio", "direction": "left"},
+        "canillita": {"display_name": "Canillita", "direction": "down"},
+        "citizen_unemployed": {"display_name": "Desempleado", "direction": "right"},
+        "citizen_patron": {"display_name": "Parroquiano", "direction": "left"},
+    }
 
     def __init__(self, stack: StateStack) -> None:
         self.stack = stack
@@ -57,9 +72,18 @@ class World:
         self.camera.x, self.camera.y = self.player.x, self.player.y
         self.camera.update(0)
 
+        # Transition effect variables
+        self.transitioning = False
+        self.transition_alpha = 255
+        Timer.tween(0.4, [(self, {"transition_alpha": 0})], ease_function_name="out_cubic")
+
         # Setup triggers and NPCs in each region
         self._setup_triggers()
         self._populate_npcs()
+
+        # Audio Setup
+        self.bgm_playing = False
+        self._play_bgm()
 
         # Prompt displayed on screen when near an interactable
         self.active_prompt: Optional[str] = None
@@ -73,115 +97,110 @@ class World:
     def region(self) -> Region:
         return self.regions[self.current_region_name]
 
+    # ── Configuración de Audio ───────────────────────────────────────────────
+
+    def _play_bgm(self) -> None:
+        """Loads and loops background music if not already playing."""
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "walk_around.mp3"
+        if music_path.exists():
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.load(music_path)
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(loops=-1)
+                self.bgm_playing = True
+
+    # ── Configuración de Transiciones ───────────────────────────────────────
+
+    def _start_transition(self, on_middle_action: Callable[[], None]) -> None:
+        """Handles screen fade-out and fade-in when changing rooms/zones."""
+        if self.transitioning:
+            return
+
+        self.transitioning = True
+        self.transition_alpha = 0
+        self._clear_movement()
+
+        def on_fade_out_complete():
+            on_middle_action()
+            Timer.tween(
+                0.4,
+                [(self, {"transition_alpha": 0})],
+                ease_function_name="out_cubic",
+                on_finish=lambda: setattr(self, "transitioning", False),
+            )
+
+        Timer.tween(
+            0.4,
+            [(self, {"transition_alpha": 255})],
+            ease_function_name="in_cubic",
+            on_finish=on_fade_out_complete,
+        )
+
     # ── Configuración de Triggers ────────────────────────────────────────────
 
     def _setup_triggers(self) -> None:
-        """Register specific interactive triggers per region."""
-        # 1. Oficina: Pizarra de Corcho
-        office = self.regions["office"]
-        office.triggers.append(
-            Trigger(
-                trigger_id="corkboard",
-                x=220,
-                y=50,
-                width=44,
-                height=26,
-                trigger_type="corkboard",
-                prompt_text="[ESPACIO] Examinar Pizarra de Corcho",
-                action_fn=self._open_corkboard,
-            )
-        )
+        """Bind dynamic actions and prompts to tilemap-loaded triggers."""
+        trigger_configs = {
+            "corkboard": {
+                "prompt": "[ESPACIO] Examinar Pizarra de Corcho",
+                "action": self._open_corkboard,
+            },
+            "empty_frame": {
+                "prompt": "[ESPACIO] Inspeccionar marco vacío robado",
+                "action": self._inspect_museum_frame,
+            },
+            "archive": {
+                "prompt": "[ESPACIO] Infiltrarse en archivo policial",
+                "action": self._start_archive_minigame,
+            },
+            "stealth": {
+                "prompt": "[ESPACIO] Entrar a oficinas traseras (Sigilo)",
+                "action": lambda w, s: self._try_enter_club_door("stealth"),
+            },
+            "safecracker": {
+                "prompt": "[ESPACIO] Forzar caja fuerte de la bóveda",
+                "action": lambda w, s: self._try_enter_club_door("safecracker"),
+            },
+        }
 
-        # 2. Museo: Marco vacío robado
-        museum = self.regions["museum"]
-        museum.triggers.append(
-            Trigger(
-                trigger_id="empty_frame",
-                x=224,
-                y=48,
-                width=48,
-                height=28,
-                trigger_type="interaction",
-                prompt_text="[ESPACIO] Inspeccionar marco vacío robado",
-                action_fn=self._inspect_museum_frame,
-            )
-        )
-
-        # 3. Comisaría: Acceso al archivo policial en el sótano
-        police = self.regions["police_station"]
-        police.triggers.append(
-            Trigger(
-                trigger_id="archive",
-                x=320,
-                y=96,
-                width=40,
-                height=36,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Infiltrarse en archivo policial",
-                action_fn=self._start_archive_minigame,
-            )
-        )
-
-        # 4. Nightclub: Triggers visuales para las puertas de Stealth y Safecracker
-        nightclub = self.regions["nightclub"]
-        nightclub.triggers.append(
-            Trigger(
-                trigger_id="stealth_prompt",
-                x=385,
-                y=8,
-                width=90,
-                height=40,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Entrar a oficinas traseras (Sigilo)",
-                action_fn=lambda w, s: self._try_enter_club_door("stealth"),
-            )
-        )
-        nightclub.triggers.append(
-            Trigger(
-                trigger_id="safecracker_prompt",
-                x=98,
-                y=32,
-                width=32,
-                height=24,
-                trigger_type="minigame",
-                prompt_text="[ESPACIO] Forzar caja fuerte de la bóveda",
-                action_fn=lambda w, s: self._try_enter_club_door("safecracker"),
-            )
-        )
+        for region in self.regions.values():
+            for trigger in region.triggers:
+                if trigger.trigger_id in trigger_configs:
+                    cfg = trigger_configs[trigger.trigger_id]
+                    if not trigger.prompt_text:
+                        trigger.prompt_text = cfg["prompt"]
+                    trigger.action_fn = cfg["action"]
 
     # ── Población de NPCs ───────────────────────────────────────────────────
 
     def _populate_npcs(self) -> None:
-        """Spawn story-relevant NPCs in their respective locations."""
-        for r in self.regions.values():
-            r.npcs.clear()
+        """Dynamically populate NPCs in each region based on Tiled NPC layers."""
+        for region in self.regions.values():
+            region.npcs.clear()
+            npc_layer = region.tilemap.object_layers.get("NPCs", [])
 
-        # 1. Oficina
-        office = self.regions["office"]
-        office.npcs.append(NPC(198, 80, "Sofia Del Roscio", dialogue_key="sofia_office", direction="right"))
-        office.npcs.append(NPC(160, 68, "Lauren", dialogue_key="lauren_office", direction="down"))
+            for obj in npc_layer:
+                dialogue_key = str(getattr(obj, "name", "") or "").strip()
+                if not dialogue_key:
+                    continue
 
-        # 2. Museo
-        museum = self.regions["museum"]
-        museum.npcs.append(NPC(200, 180, "Curador Lombardi", dialogue_key="museum_curator", direction="down"))
+                # Match against configuration metadata or fallback to Tiled attributes
+                config = self.NPC_CONFIGS.get(
+                    dialogue_key,
+                    {
+                        "display_name": getattr(obj, "display_name", dialogue_key.capitalize()),
+                        "direction": getattr(obj, "direction", "down"),
+                    },
+                )
 
-        # 3. Comisaría
-        police = self.regions["police_station"]
-        police.npcs.append(NPC(180, 160, "Sargento Bianchi", dialogue_key="police_officer", direction="down"))
-
-        # 4. Callejón
-        alley = self.regions["alley"]
-        alley.npcs.append(NPC(240, 140, "Guardia Morales", dialogue_key="morales_interrogation", direction="down"))
-
-        # 5. Nightclub
-        club = self.regions["nightclub"]
-        club.npcs.append(NPC(280, 180, "Sofia Del Roscio", dialogue_key="sofia_club", direction="left"))
-
-        # 6. Ciudad
-        city = self.regions["city"]
-        city.npcs.append(NPC(1040, 720, "Canillita", dialogue_key="canillita", direction="down"))
-        city.npcs.append(NPC(600, 730, "Desempleado", dialogue_key="citizen_unemployed", direction="right"))
-        city.npcs.append(NPC(900, 730, "Parroquiano", dialogue_key="citizen_patron", direction="left"))
+                npc = NPC(
+                    x=obj.x,
+                    y=obj.y,
+                    name=config["display_name"],
+                    dialogue_key=dialogue_key,
+                    direction=config["direction"],
+                )
+                region.npcs.append(npc)
 
     # ── Acciones de Triggers e Interacciones ─────────────────────────────────
 
@@ -203,7 +222,9 @@ class World:
 
     def _open_corkboard(self, world: Any, story: StoryManager) -> None:
         self._clear_movement()
+        pygame.mixer.music.stop()
         self.stack.push(CorkboardState(self.stack))
+        self.bgm_playing = False
 
     def _inspect_museum_frame(self, world: Any, story: StoryManager) -> None:
         self._clear_movement()
@@ -233,7 +254,9 @@ class World:
             self._monologue(reason)
             return
         self._clear_movement()
+        pygame.mixer.music.stop()
         self.stack.push(PoliceArchiveState(self.stack))
+        self.bgm_playing = False
 
     def _try_enter_club_door(self, door_type: str) -> None:
         can_access, reason = self.story.can_access_minigame(door_type)
@@ -245,10 +268,14 @@ class World:
         self._clear_movement()
         if door_type == "stealth":
             self.player.y = max(self.player.y, 52)
+            pygame.mixer.music.stop()
             self.stack.push(StealthMinigameState(self.stack))
+            self.bgm_playing = False
         elif door_type == "safecracker":
             self.player.y = max(self.player.y, 58)
+            pygame.mixer.music.stop()
             self.stack.push(SafeCrackerState(self.stack))
+            self.bgm_playing = False
 
     def _monologue(self, text: str) -> None:
         """Display an internal monologue from Gallagher."""
@@ -258,22 +285,23 @@ class World:
     # ── Actualización de Cuadro y Movimiento ─────────────────────────────────
 
     def update(self, dt: float) -> None:
-        # Movement calculation
-        dx = float(self.player.held["move_right"] - self.player.held["move_left"])
-        dy = float(self.player.held["move_down"] - self.player.held["move_up"])
-        if dx and dy:
-            dx *= 0.7071
-            dy *= 0.7071
+        if not self.bgm_playing:
+            self._play_bgm()
+        if not self.transitioning:
+            dx = float(self.player.held["move_right"] - self.player.held["move_left"])
+            dy = float(self.player.held["move_down"] - self.player.held["move_up"])
+            if dx and dy:
+                dx *= 0.7071
+                dy *= 0.7071
 
-        self._move_axis(dx * Player.SPEED * dt, 0)
-        self._move_axis(0, dy * Player.SPEED * dt)
-        self.player.update(dt)
+            self._move_axis(dx * Player.SPEED * dt, 0)
+            self._move_axis(0, dy * Player.SPEED * dt)
+            self.player.update(dt)
 
-        self._check_door_collision()
-        self._update_interaction_prompts()
+            self._check_door_collision()
+            self._update_interaction_prompts()
+
         self.camera.update(dt)
-
-        # Update floating notification banners
         self.story.update_notifications(dt)
 
     def _move_axis(self, dx: float, dy: float) -> None:
@@ -297,41 +325,59 @@ class World:
         return player_rect.colliderect(door_rect)
 
     def _check_door_collision(self) -> None:
-        """Verify door collisions with narrative gating."""
+        """Verify door collisions with narrative gating and trigger transitions."""
+        if self.transitioning:
+            return
+
         for door in self._door_objects():
             if not self._door_collides(door):
                 continue
 
             door_name = str(getattr(door, "name", "") or "").strip().lower()
 
-            # Entering a zone from the City
             if self.current_region_name == "city":
                 if door_name not in self.CITY_DOOR_INDEX:
                     continue
 
                 can_enter, reason = self.story.can_access_zone(door_name)
                 if not can_enter:
-                    # Push back player slightly to prevent sticking
                     self.player.y += 12
                     self._monologue(reason)
                     return
 
-                # Enter zone
-                self.current_region_name = door_name
-                self.player.x, self.player.y = self.region.entry_position("south")
-                self._update_camera_bounds()
+                def enter_door_action():
+                    self.current_region_name = door_name
+                    self.player.x, self.player.y = self.region.entry_position("south")
+                    self._sync_camera_instant()
+
+                    # Play door sound for indoor locations, bypass open street transitions like the alley
+                    if door_name != "alley":
+                        settings.SOUNDS[f"doorOpen_{random.randint(1, 2)}"].play()
+
+                self._start_transition(enter_door_action)
                 return
 
-            # Exit to City
             if door_name == "exit":
-                self._return_to_city()
-                self._update_camera_bounds()
+                def exit_door_action():
+                    # Play door sound only when leaving an indoor room, not when walking out of the alley
+                    if self.current_region_name != "alley":
+                        settings.SOUNDS[f"doorClose_{random.randint(1, 4)}"].play()
+
+                    self._return_to_city()
+                    self._sync_camera_instant()
+
+                self._start_transition(exit_door_action)
                 return
 
-            # Minigame doors inside Nightclub
             if door_name in ("stealth", "safecracker"):
                 self._try_enter_club_door(door_name)
                 return
+            
+    def _sync_camera_instant(self) -> None:
+        """Instantly align camera position with player and update bounds to avoid jumps."""
+        self._update_camera_bounds()
+        self.camera.x, self.camera.y = self.player.x, self.player.y
+        self.camera.update(0)
 
     def _return_to_city(self) -> None:
         city_door = self.regions["city"].tilemap.object_layers["Doors"][
@@ -377,14 +423,12 @@ class World:
 
         player_rect = self.player.rect
 
-        # Check triggers in current region
         for trigger in self.region.triggers:
             if trigger.collides(player_rect):
                 self.active_prompt = trigger.prompt_text
                 self.active_interactable = trigger
                 return
 
-        # Check NPCs in current region (direct rect collision)
         for npc in self.region.npcs:
             if player_rect.colliderect(npc.rect):
                 self.active_prompt = f"[ESPACIO] Hablar con {npc.name}"
@@ -394,6 +438,8 @@ class World:
     # ── Manejo de Entrada (Interacción) ──────────────────────────────────────
 
     def on_input(self, input_id: str, input_data: Any) -> None:
+        if self.transitioning:
+            return
         self.player.on_input(input_id, input_data)
         if input_id in ("space", "enter") and getattr(input_data, "pressed", False):
             self._try_interact()
@@ -405,20 +451,17 @@ class World:
         interactable = self.active_interactable
         self._clear_movement()
 
-        # 1. Trigger interaction
         if isinstance(interactable, Trigger):
             if interactable.action_fn is not None:
                 interactable.action_fn(self, self.story)
             return
 
-        # 2. NPC interaction
         if isinstance(interactable, NPC):
             self._interact_with_npc(interactable)
 
     def _interact_with_npc(self, npc: NPC) -> None:
         key = npc.dialogue_key
 
-        # Sofia en Oficina
         if key == "sofia_office":
             if not self.story.flags["sofia_office_talked"]:
                 self._start_intro_cutscene()
@@ -426,26 +469,22 @@ class World:
                 self._monologue("Sofia me espera en el museo. Debo encontrar 'La Dama del Lirio'.")
             return
 
-        # Lauren en Oficina
         if key == "lauren_office":
             visit = self.story.get_current_corcho_visit()
             hint = DIALOGUES["lauren_office"]["hints"].get(visit, "Revise las pistas en el corcho, jefe.")
             self.stack.push(DialogueState(self.stack), text=hint, speaker="Lauren")
             return
 
-        # Curador en Museo
         if key == "museum_curator":
             data = DIALOGUES["museum_curator"]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Oficial en Comisaría
         if key == "police_officer":
             data = DIALOGUES["police_officer"]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Morales en Callejón
         if key == "morales_interrogation":
             if not self.story.flags["morales_confronted"]:
                 data = DIALOGUES["morales_interrogation"]
@@ -462,11 +501,13 @@ class World:
                         on_finish=on_confession_end,
                     )
 
+                pygame.mixer.music.stop()
                 self.stack.push(
                     ConfrontationState(self.stack),
                     confrontation_id="morales",
                     on_complete=on_confrontation_complete
                 )
+                self.bgm_playing = False
             else:
                 self.stack.push(
                     DialogueState(self.stack),
@@ -475,7 +516,6 @@ class World:
                 )
             return
 
-        # Sofia en Club Velvet
         if key == "sofia_club":
             if not self.story.flags["sofia_club_talked"]:
                 data = DIALOGUES["sofia_club"]
@@ -499,7 +539,6 @@ class World:
                 )
             return
 
-        # Canillita en Ciudad
         if key == "canillita":
             if self.story.flags["corcho1_done"] and not self.story.flags["recorte_encontrado"]:
                 data = DIALOGUES["canillita"]["special_c07"]
@@ -520,13 +559,11 @@ class World:
                 self.stack.push(DialogueState(self.stack), text=line, speaker="Canillita")
             return
 
-        # Transeúntes genéricos
         if key in DIALOGUES:
             data = DIALOGUES[key]
             self.stack.push(DialogueState(self.stack), text=data["pages"], speaker=data["speaker"])
             return
 
-        # Línea de fallback
         self.stack.push(DialogueState(self.stack), text=npc.dialogue())
 
     def _clear_movement(self) -> None:
@@ -535,16 +572,12 @@ class World:
 
     # ── Renderizado del Mundo y UI ───────────────────────────────────────────
 
-    # ── Renderizado del Mundo y UI ───────────────────────────────────────────
-
     def render(self, surface: pygame.Surface) -> None:
-        # 1. Render World & Player
         self.region.render(surface, self.camera)
         self.player.render(surface, self.camera)
 
         font = settings.FONTS["medium"]
 
-        # Region Label (Top-Left)
         if not self.story.notifications:
             reg_text = self.current_region_name.upper()
             rw, rh = font.size(reg_text)
@@ -560,12 +593,10 @@ class World:
                 theme=NOIR_PROMPT_THEME,
             )
             reg_label.render(surface)
-        # Floating Notification Banners (Top Center)
         else:
             notif = self.story.notifications[0]
             max_text_w = settings.VIRTUAL_WIDTH - 60
 
-            # Shared wrap_text helper from src.text_utils
             lines = wrap_text(font, notif["text"], max_text_w)
 
             line_height = font.get_linesize()
@@ -590,7 +621,6 @@ class World:
                 )
                 notif_label.render(surface)
 
-        # 3. Floating Interaction Prompt Badge (Bottom Center)
         if self.active_prompt:
             pw, ph = font.size(self.active_prompt)
             badge_w = pw + 20
@@ -609,3 +639,11 @@ class World:
                 theme=NOIR_PROMPT_THEME,
             )
             prompt_label.render(surface)
+
+        if self.transition_alpha > 0:
+            overlay = pygame.Surface(
+                (settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT),
+                pygame.SRCALPHA,
+            )
+            overlay.fill((0, 0, 0, int(self.transition_alpha)))
+            surface.blit(overlay, (0, 0))

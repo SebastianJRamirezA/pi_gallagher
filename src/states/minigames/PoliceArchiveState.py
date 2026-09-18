@@ -10,7 +10,9 @@ Uses HierarchicalState with a sub-state machine to manage:
 
 from gale.state import HierarchicalState
 from gale.timer import Timer
+import pygame
 
+import settings
 from src.states.archive_substates.IntroSubstate import IntroSubstate
 from src.states.archive_substates.PhaseASubstate import PhaseASubstate
 from src.states.archive_substates.PhaseAFailSubstate import PhaseAFailSubstate
@@ -27,6 +29,12 @@ class PoliceArchiveState(HierarchicalState):
     """
 
     def __init__(self, state_machine):
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "investigate.mp3"
+        if music_path.exists():
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(loops=-1)
+
         super().__init__(
             state_machine,
             substates={
@@ -46,4 +54,5 @@ class PoliceArchiveState(HierarchicalState):
     def exit(self):
         """Clean up all timers when leaving the minigame entirely."""
         self.substate_machine.current.exit()
+        pygame.mixer.music.stop()
         Timer.clear()

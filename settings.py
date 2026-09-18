@@ -101,4 +101,25 @@ FONTS = {
 
 SOUNDS = {
     "clock": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "clock.wav"),
+    "doorClose_1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_1.ogg"),
+    "doorClose_2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_2.ogg"),
+    "doorClose_3": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_3.ogg"),
+    "doorClose_4": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_4.ogg"),
+    "doorOpen_1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorOpen_1.ogg"),
+    "doorOpen_2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorOpen_2.ogg"),
+    "footstep00": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep00.ogg"),
+    "footstep01": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep01.ogg"),
+    "footstep02": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep02.ogg"),
+    "footstep03": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep03.ogg"),
+    "footstep04": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep04.ogg"),
+    "footstep05": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep05.ogg"),
+    "footstep06": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep06.ogg"),
+    "footstep07": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep07.ogg"),
+    "footstep08": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep08.ogg"),
+    "footstep09": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep09.ogg"),
 }
+
+for i in range(10):
+    key = f"footstep{i:02d}"
+    if key in SOUNDS:
+        SOUNDS[key].set_volume(0.1)
