@@ -81,6 +81,10 @@ class World:
         self._setup_triggers()
         self._populate_npcs()
 
+        # Audio Setup
+        self.bgm_playing = False
+        self._play_bgm()
+
         # Prompt displayed on screen when near an interactable
         self.active_prompt: Optional[str] = None
         self.active_interactable: Optional[Any] = None
@@ -92,6 +96,18 @@ class World:
     @property
     def region(self) -> Region:
         return self.regions[self.current_region_name]
+
+    # ── Configuración de Audio ───────────────────────────────────────────────
+
+    def _play_bgm(self) -> None:
+        """Loads and loops background music if not already playing."""
+        music_path = settings.BASE_DIR / "assets" / "sounds" / "walk_around.mp3"
+        if music_path.exists():
+            if not pygame.mixer.music.get_busy():
+                pygame.mixer.music.load(music_path)
+                pygame.mixer.music.set_volume(0.5)
+                pygame.mixer.music.play(loops=-1)
+                self.bgm_playing = True
 
     # ── Configuración de Transiciones ───────────────────────────────────────
 
@@ -236,7 +252,9 @@ class World:
             self._monologue(reason)
             return
         self._clear_movement()
-        self.stack.push(PoliceArchiveState(self.stack))
+        pygame.mixer.music.stop()
+        self.stack.push(SafeCrackerState(self.stack))
+        self.bgm_playing = False
 
     def _try_enter_club_door(self, door_type: str) -> None:
         can_access, reason = self.story.can_access_minigame(door_type)
@@ -248,10 +266,14 @@ class World:
         self._clear_movement()
         if door_type == "stealth":
             self.player.y = max(self.player.y, 52)
+            pygame.mixer.music.stop()
             self.stack.push(StealthMinigameState(self.stack))
+            self.bgm_playing = False
         elif door_type == "safecracker":
             self.player.y = max(self.player.y, 58)
+            pygame.mixer.music.stop()
             self.stack.push(SafeCrackerState(self.stack))
+            self.bgm_playing = False
 
     def _monologue(self, text: str) -> None:
         """Display an internal monologue from Gallagher."""
@@ -261,6 +283,8 @@ class World:
     # ── Actualización de Cuadro y Movimiento ─────────────────────────────────
 
     def update(self, dt: float) -> None:
+        if not self.bgm_playing:
+            self._play_bgm()
         if not self.transitioning:
             dx = float(self.player.held["move_right"] - self.player.held["move_left"])
             dy = float(self.player.held["move_down"] - self.player.held["move_up"])

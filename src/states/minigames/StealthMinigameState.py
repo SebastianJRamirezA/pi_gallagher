@@ -384,6 +384,7 @@ class StealthMinigameState(BaseState):
                     if world is not None and hasattr(world, "player"):
                         world.player.y = max(world.player.y, 52)
                         break
+            pygame.mixer_music.stop()
             self.state_machine.pop()
             return True
         return False

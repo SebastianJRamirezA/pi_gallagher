@@ -191,6 +191,7 @@ class SafeCrackerState(BaseState):
 
     def update(self, dt: float) -> None:
         if self.complete:
+            pygame.mixer.music.stop()
             self.state_machine.pop()
             return
 
@@ -271,6 +272,7 @@ class SafeCrackerState(BaseState):
                     story.add_card(c)
                 story.flags["safecracker_completed"] = True
                 self.message = "Los pestillos ceden. La caja fuerte está abierta."
+                pygame.mixer_music.stop()
                 self.state_machine.pop()
             else:
                 self.dial = 0.0
