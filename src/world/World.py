@@ -707,11 +707,18 @@ class World:
             "La llamada al Sargento Bianchi sella el destino del Museo Del Roscio y del imperio clandestino de Cornelius Blackwood.",
             "Caso cerrado. 'La Dama del Lirio' vuelve al lugar que le corresponde.",
         ]
+
+        def on_ending_finish():
+            from src.states.VictoryState import VictoryState
+            pygame.mixer.music.fadeout(500)
+            self.bgm_playing = False
+            self.stack.push(VictoryState(self.stack))
+
         self.stack.push(
             DialogueState(self.stack),
             text=ending_pages,
             speaker="P.I. Gallagher",
-            on_finish=lambda: self.story.push_notification("¡CASO RESUELTO! Fin de la investigación."),
+            on_finish=on_ending_finish,
         )
 
     def _clear_movement(self) -> None:

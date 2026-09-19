@@ -51,6 +51,9 @@ class StoryManager:
             "corcho3_done": False,
             "safecracker_completed": False,
             "corcho_final_done": False,
+            "steiger_ambushed": False,
+            "steiger_defeated": False,
+            "sofia_confronted": False,
         }
 
         # Cola de notificaciones en pantalla
