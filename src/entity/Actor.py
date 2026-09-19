@@ -83,7 +83,3 @@ class Actor:
             if camera is not None:
                 position = camera.apply(position)
             surface.blit(settings.TEXTURES[self.texture], position, frame)
-
-        # Draw collision box for debugging
-        if camera is not None:
-            pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.rect), 1)

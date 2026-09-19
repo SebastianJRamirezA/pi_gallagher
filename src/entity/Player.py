@@ -87,9 +87,6 @@ class Player(Actor):
     def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         self.camera = camera
         self.state_machine.render(surface)
-        # Draw collision box matching the rendered sprite
-        if camera is not None:
-            pygame.draw.rect(surface, (255, 0, 0), camera.apply(self.collision_rect), 1)
 
     # ── Input ──────────────────────────────────────────────────────────
 
