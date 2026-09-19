@@ -76,6 +76,15 @@ TEXTURES["bandit_hit"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "b
 TEXTURES["steiger"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "steiger.png")
 TEXTURES["steiger_shot"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "steiger_shot.png")
 TEXTURES["steiger_dash"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "steiger_dash.png")
+TEXTURES["lauren"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "lauren.png")
+TEXTURES["sofia"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "sofia.png")
+TEXTURES["police"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "police.png")
+TEXTURES["parroquiano"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "parroquiano.png")
+TEXTURES["canillita"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "canillita.png")
+TEXTURES["unemployed"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "unemployed.png")
+TEXTURES["curador"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "curador.png")
+TEXTURES["curator"] = TEXTURES["curador"]
+TEXTURES["morales"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "morales.png")
 
 FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
@@ -89,6 +98,15 @@ FRAMES = {
     "steiger": frames.generate_frames(TEXTURES["steiger"], 20, 28),
     "steiger_shot": frames.generate_frames(TEXTURES["steiger_shot"], 20, 23),
     "steiger_dash": frames.generate_frames(TEXTURES["steiger_dash"], 20, 20),
+    "lauren": frames.generate_frames(TEXTURES["lauren"], 12, 24),
+    "sofia": frames.generate_frames(TEXTURES["sofia"], 12, 24),
+    "police": frames.generate_frames(TEXTURES["police"], 15, 28),
+    "parroquiano": frames.generate_frames(TEXTURES["parroquiano"], 15, 32),
+    "canillita": frames.generate_frames(TEXTURES["canillita"], 15, 22),
+    "unemployed": frames.generate_frames(TEXTURES["unemployed"], 15, 30),
+    "curador": frames.generate_frames(TEXTURES["curador"], 15, 32),
+    "curator": frames.generate_frames(TEXTURES["curador"], 15, 32),
+    "morales": frames.generate_frames(TEXTURES["morales"], 15, 30),
 }
 
 TILE_SIZE = 16

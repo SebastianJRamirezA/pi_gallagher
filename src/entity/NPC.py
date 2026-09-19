@@ -16,8 +16,9 @@ class NPC(Actor):
         name: str,
         dialogue_key: str = "",
         direction: str = "down",
+        texture: str = "npc",
     ) -> None:
-        super().__init__(x, y, "npc", name, direction=direction)
+        super().__init__(x, y, texture, name, direction=direction)
         self.dialogue_key = dialogue_key
 
     def dialogue(self) -> str:
