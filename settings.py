@@ -86,6 +86,7 @@ TEXTURES["curador"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "cura
 TEXTURES["curator"] = TEXTURES["curador"]
 TEXTURES["morales"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "morales.png")
 TEXTURES["guard"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "guard.png")
+TEXTURES["logo"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "logo.png")
 
 FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
