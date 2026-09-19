@@ -37,7 +37,13 @@ class Actor:
     def rect(self) -> pygame.Rect:
         frames_list = settings.FRAMES.get(self.texture, [])
         if frames_list:
-            frame = frames_list[0] if len(frames_list) == 1 else frames_list[DIRECTIONS.get(self.direction, 0)]
+            if len(frames_list) == 1:
+                frame = frames_list[0]
+            elif self.texture == "guard":
+                guard_dirs = {"down": 0, "right": 5, "left": 5, "up": 10}
+                frame = frames_list[guard_dirs.get(self.direction, 0)]
+            else:
+                frame = frames_list[DIRECTIONS.get(self.direction, 0)]
             return pygame.Rect(round(self.x), round(self.y), frame.width, frame.height)
         return pygame.Rect(round(self.x), round(self.y), 16, 18)
 
@@ -50,6 +56,18 @@ class Actor:
         frames_list = settings.FRAMES[self.texture]
         if len(frames_list) == 1:
             frame = frames_list[0]
+            texture = settings.TEXTURES[self.texture]
+            image = pygame.Surface((frame.width, frame.height), pygame.SRCALPHA)
+            image.blit(texture, (0, 0), frame)
+            if self.direction == "left":
+                image = pygame.transform.flip(image, True, False)
+            position = pygame.Rect(round(self.x), round(self.y), frame.width, frame.height)
+            if camera is not None:
+                position = camera.apply(position)
+            surface.blit(image, position)
+        elif self.texture == "guard":
+            guard_dirs = {"down": 0, "right": 5, "left": 5, "up": 10}
+            frame = frames_list[guard_dirs.get(self.direction, 0)]
             texture = settings.TEXTURES[self.texture]
             image = pygame.Surface((frame.width, frame.height), pygame.SRCALPHA)
             image.blit(texture, (0, 0), frame)

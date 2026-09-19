@@ -5,7 +5,7 @@ Stealth Minigame State — top-down stealth prototype with Actor integration and
 """
 
 import math
-from typing import List, Dict, Tuple, Optional
+from typing import Any, List, Dict, Tuple, Optional
 
 import pygame
 
@@ -13,6 +13,7 @@ from gale.state import BaseState
 from gale.camera import Camera
 from gale.timer import Timer
 from gale.text import render_text
+from gale.animation import Animation
 
 from src.entity.Player import Player
 from src.entity.Actor import Actor
@@ -70,14 +71,73 @@ def line_of_sight_blocked(
     return False
 
 
+class GuardActor(Actor):
+    """Animated guard actor using the 100x60 guard spritesheet."""
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        texture: str = "guard",
+        name: str = "Guardia",
+        direction: str = "down",
+    ) -> None:
+        super().__init__(x, y, texture, name, direction=direction)
+        # Fila 1: 2 sprites caminando hacia abajo (indices 0, 1)
+        # Fila 2: 5 sprites caminando hacia la derecha (indices 5, 6, 7, 8, 9)
+        # Fila 3: 2 sprites caminando hacia arriba (indices 10, 11)
+        # Caminar a la izquierda: los mismos 5 sprites volteados
+        self.animations: Dict[str, Animation] = {
+            "down": Animation([0, 1], time_interval=0.25),
+            "right": Animation([5, 6, 7, 8, 9], time_interval=0.12),
+            "left": Animation([5, 6, 7, 8, 9], time_interval=0.12),
+            "up": Animation([10, 11], time_interval=0.25),
+        }
+        self.current_animation = self.animations.get(self.direction, self.animations["down"])
+        self.is_moving = False
+
+    def update(self, dt: float, is_moving: bool = True) -> None:
+        self.is_moving = is_moving
+        target_anim = self.animations.get(self.direction, self.animations["down"])
+        if self.current_animation != target_anim:
+            self.current_animation = target_anim
+            self.current_animation.reset()
+        if self.is_moving:
+            self.current_animation.update(dt)
+
+    def render(self, surface: pygame.Surface, camera: Any = None) -> None:
+        frame_idx = self.current_animation.get_current_frame()
+        frame = settings.FRAMES[self.texture][frame_idx]
+        texture = settings.TEXTURES[self.texture]
+        image = pygame.Surface((frame.width, frame.height), pygame.SRCALPHA)
+        image.blit(texture, (0, 0), frame)
+        if self.direction == "left":
+            image = pygame.transform.flip(image, True, False)
+        # Centrar el sprite de 20x20 sobre el centro del hitbox (10x10)
+        pos = pygame.Rect(round(self.x - 5), round(self.y - 5), frame.width, frame.height)
+        if camera is not None:
+            pos = camera.apply(pos)
+        surface.blit(image, pos)
+
+
 def _make_guard(
     x: float, y: float, w: float, h: float,
     angle: float, fov: float, distance: float,
     patrol: Optional[List[Dict]] = None,
-    texture: str = "npc",
+    texture: str = "guard",
 ) -> Dict:
-    """Build a guard dict with an Actor instance for visual rendering."""
-    actor = Actor(x, y, texture, "Guardia", direction="down")
+    """Build a guard dict with a GuardActor instance for visual rendering."""
+    ang = angle % 360
+    if 45 <= ang < 135:
+        initial_dir = "down"
+    elif 135 <= ang < 225:
+        initial_dir = "left"
+    elif 225 <= ang < 315:
+        initial_dir = "up"
+    else:
+        initial_dir = "right"
+
+    actor = GuardActor(x, y, texture, "Guardia", direction=initial_dir)
     guard = {
         "actor": actor,
         "rect": pygame.Rect(x, y, w, h),
@@ -304,6 +364,7 @@ class StealthMinigameState(BaseState):
     def _update_guards(self, dt: float) -> None:
         for guard in self.guards:
             patrol = guard["patrol"]
+            is_moving = False
             if patrol is not None:
                 wp = patrol[guard["patrol_index"]]
                 tx, ty = float(wp["x"]), float(wp["y"])
@@ -316,6 +377,7 @@ class StealthMinigameState(BaseState):
                     guard["angle"] = wp["angle"]
                     guard["patrol_index"] = (guard["patrol_index"] + 1) % len(patrol)
                 else:
+                    is_moving = True
                     speed = guard["patrol_speed"] * dt
                     ratio = min(speed / dist, 1.0)
                     guard["fx"] += (tx - gx) * ratio
@@ -338,6 +400,9 @@ class StealthMinigameState(BaseState):
                 actor.direction = "up"
             else:
                 actor.direction = "right"
+
+            if hasattr(actor, "update"):
+                actor.update(dt, is_moving=is_moving)
 
     def _check_detection(self) -> None:
         px, py = self.player_entity.collision_rect.center

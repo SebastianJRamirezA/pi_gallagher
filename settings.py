@@ -85,6 +85,7 @@ TEXTURES["unemployed"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "u
 TEXTURES["curador"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "curador.png")
 TEXTURES["curator"] = TEXTURES["curador"]
 TEXTURES["morales"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "morales.png")
+TEXTURES["guard"] = pygame.image.load(BASE_DIR / "assets" / "graphics" / "guard.png")
 
 FRAMES = {
     "city_tiles": frames.generate_frames(TEXTURES["city_tiles"], 16, 16),
@@ -107,6 +108,7 @@ FRAMES = {
     "curador": frames.generate_frames(TEXTURES["curador"], 15, 32),
     "curator": frames.generate_frames(TEXTURES["curador"], 15, 32),
     "morales": frames.generate_frames(TEXTURES["morales"], 15, 30),
+    "guard": frames.generate_frames(TEXTURES["guard"], 20, 20),
 }
 
 TILE_SIZE = 16
