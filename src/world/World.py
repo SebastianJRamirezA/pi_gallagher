@@ -34,18 +34,18 @@ class World:
     DOOR_TARGETS = ("office", "museum", "nightclub", "police_station", "alley")
     CITY_DOOR_INDEX = {target: index for index, target in enumerate(DOOR_TARGETS) if target}
 
-    # Configuration map linking dialogue keys to display names and default facing directions
+    # Configuration map linking dialogue keys to display names, default facing directions, and textures
     NPC_CONFIGS = {
-        "sofia_office": {"display_name": "Sofia Del Roscio", "direction": "right"},
-        "lauren_office": {"display_name": "Lauren", "direction": "down"},
-        "museum_curator": {"display_name": "Curador Lombardi", "direction": "down"},
-        "police_officer": {"display_name": "Sargento Bianchi", "direction": "down"},
-        "morales_interrogation": {"display_name": "Guardia Morales", "direction": "down"},
-        "sofia_club": {"display_name": "Sofia Del Roscio", "direction": "left"},
-        "canillita": {"display_name": "Canillita", "direction": "down"},
-        "citizen_unemployed": {"display_name": "Desempleado", "direction": "right"},
-        "citizen_patron": {"display_name": "Parroquiano", "direction": "left"},
-        "sofia_confrontation": {"display_name": "Sofia Del Roscio", "direction": "down"},
+        "sofia_office": {"display_name": "Sofia Del Roscio", "direction": "right", "texture": "sofia"},
+        "lauren_office": {"display_name": "Lauren", "direction": "down", "texture": "lauren"},
+        "museum_curator": {"display_name": "Curador Lombardi", "direction": "down", "texture": "curador"},
+        "police_officer": {"display_name": "Sargento Bianchi", "direction": "down", "texture": "police"},
+        "morales_interrogation": {"display_name": "Guardia Morales", "direction": "left", "texture": "morales"},
+        "sofia_club": {"display_name": "Sofia Del Roscio", "direction": "left", "texture": "sofia"},
+        "canillita": {"display_name": "Canillita", "direction": "down", "texture": "canillita"},
+        "citizen_unemployed": {"display_name": "Desempleado", "direction": "right", "texture": "unemployed"},
+        "citizen_patron": {"display_name": "Parroquiano", "direction": "left", "texture": "parroquiano"},
+        "sofia_confrontation": {"display_name": "Sofia Del Roscio", "direction": "down", "texture": "sofia"},
     }
 
     def __init__(self, stack: StateStack) -> None:
@@ -199,6 +199,7 @@ class World:
                     {
                         "display_name": getattr(obj, "display_name", dialogue_key.capitalize()),
                         "direction": getattr(obj, "direction", "down"),
+                        "texture": "npc",
                     },
                 )
 
@@ -208,6 +209,7 @@ class World:
                     name=config["display_name"],
                     dialogue_key=dialogue_key,
                     direction=config["direction"],
+                    texture=config.get("texture", "npc"),
                 )
                 region.npcs.append(npc)
 
@@ -215,7 +217,7 @@ class World:
         if self.story.flags.get("corcho_final_done", False) and not self.story.flags.get("sofia_confronted", False):
             museum = self.regions["museum"]
             if not any(n.dialogue_key == "sofia_confrontation" for n in museum.npcs):
-                museum.npcs.append(NPC(240, 180, "Sofia Del Roscio", dialogue_key="sofia_confrontation", direction="down"))
+                museum.npcs.append(NPC(240, 180, "Sofia Del Roscio", dialogue_key="sofia_confrontation", direction="down", texture="sofia"))
 
     # ── Acciones de Triggers e Interacciones ─────────────────────────────────
 
