@@ -266,7 +266,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 24,
             meta_str,
-            font=settings.FONTS["medium"],
+            font=settings.FONTS["small"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -278,7 +278,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 40,
             kw_str,
-            font=settings.FONTS["medium"],
+            font=settings.FONTS["small"],
             color=COLOR_ACCENT_RED,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -461,7 +461,7 @@ class CorkboardState(BaseState):
 
         if len(self.threaded_ids) < 2:
             self._show_modal(
-                "PIZARRA DE CORCHO",
+                "ADVERTENCIA",
                 "Debes seleccionar al menos dos tarjetas con el hilo rojo para intentar formular una deducción.",
             )
             return

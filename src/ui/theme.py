@@ -79,7 +79,7 @@ NOIR_CARD_THREADED_THEME = Theme(
 # ── Sidebar y Dudas Abiertas Theme ──────────────────────────────────────────
 NOIR_SIDEBAR_THEME = Theme(
     font=settings.FONTS["medium"],
-    text_color=pygame.Color(220, 210, 195),
+    text_color=pygame.Color(212, 175, 55),
     background_color=COLOR_NOIR_PANEL,
     border_color=COLOR_BRASS,
     border_width=1,
