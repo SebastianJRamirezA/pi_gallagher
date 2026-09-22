@@ -135,7 +135,12 @@ FONTS = {
 }
 
 SOUNDS = {
+    # Sound Effect by Fk Foisal Ahmed (https://pixabay.com/users/foisal72-40185575/) from Pixabay (https://pixabay.com/sound-effects/)
+    "stieger_machine_gun": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "stieger_machine_gun.ogg"),
+    # Sound Effect by u_f09vejvoga (https://pixabay.com/users/u_f09vejvoga-50531779/) from Pixabay (https://pixabay.com/)
+    "gun_shot": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "gun_shot.ogg"),
     "clock": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "clock.wav"),
+    # Sound effects by Kenney (https://kenney.nl/assets/rpg-audio)
     "doorClose_1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_1.ogg"),
     "doorClose_2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_2.ogg"),
     "doorClose_3": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "doorClose_3.ogg"),

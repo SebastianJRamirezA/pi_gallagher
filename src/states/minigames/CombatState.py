@@ -367,6 +367,9 @@ class SteigerShoot(BaseState):
         self.burst_timer = 0.08
         self.post_burst_timer = 0.45
 
+        # Reproducir el sonido de la ráfaga una única vez al iniciar el ataque
+        settings.SOUNDS["stieger_machine_gun"].play()
+
     def update(self, dt: float) -> None:
         if self.shots_fired < self.shots_to_fire:
             self.burst_timer -= dt
@@ -629,6 +632,8 @@ class CombatState(BaseState):
             self.status_text = "¡Has derrotado al bandido! Presiona ESPACIO para continuar."
 
     def _on_gallagher_shoot(self) -> None:
+        settings.SOUNDS["gun_shot"].play()
+
         vx = 300.0 if self.gallagher.facing != "left" else -300.0
         offset_x = 20 if vx > 0 else -4
         self.bullets.append({
