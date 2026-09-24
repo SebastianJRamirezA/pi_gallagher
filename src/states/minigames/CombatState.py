@@ -51,11 +51,11 @@ class CombatEntity(Actor):
         texture = settings.TEXTURES[self.texture]
         frame = settings.FRAMES[self.texture][self.current_animation.get_current_frame()]
 
-        image = pygame.Surface((frame.width, frame.height), pygame.SRCALPHA)
-        image.blit(texture, (0, 0), frame)
+        sub = texture.subsurface(frame)
 
         # Spritesheets diseñados mirando a la derecha por defecto que requieren volteo al mirar a la izquierda
         RIGHT_FACING_TEXTURES = (
+            "gallagher",
             "gallagher_shoot",
             "bandit_hit",
             "steiger",
@@ -63,9 +63,9 @@ class CombatEntity(Actor):
             "steiger_dash",
         )
         if self.texture in RIGHT_FACING_TEXTURES and self.facing == "left":
-            image = pygame.transform.flip(image, True, False)
+            sub = pygame.transform.flip(sub, True, False)
 
-        surface.blit(image, (self.x, self.y))
+        surface.blit(sub, (self.x, self.y))
 
 
 # ── Estados de Gallagher ───────────────────────────────────────────────────
@@ -561,14 +561,14 @@ class CombatState(BaseState):
         self.gallagher.hp = self.player_max_health
         self.gallagher.max_hp = self.player_max_health
         self.gallagher.animations = {
-            "idle-right": Animation([6], 1.0, loops=None),
-            "idle-left": Animation([9], 1.0, loops=None),
-            "idle-up": Animation([3], 1.0, loops=None),
+            "idle-right": Animation([8], 1.0, loops=None),
+            "idle-left": Animation([8], 1.0, loops=None),
+            "idle-up": Animation([4], 1.0, loops=None),
             "idle-down": Animation([0], 1.0, loops=None),
-            "walk-down": Animation([0, 1, 0, 2], 0.15, loops=None),
-            "walk-up": Animation([3, 4, 3, 5], 0.15, loops=None),
-            "walk-right": Animation([6, 7, 6, 8], 0.15, loops=None),
-            "walk-left": Animation([9, 10, 9, 11], 0.15, loops=None),
+            "walk-down": Animation([0, 1], 0.20, loops=None),
+            "walk-up": Animation([4, 5], 0.20, loops=None),
+            "walk-right": Animation([8, 9, 10, 11], 0.15, loops=None),
+            "walk-left": Animation([8, 9, 10, 11], 0.15, loops=None),
             "shoot": Animation([0, 1, 2, 3], 0.15, loops=1),
         }
         self.gallagher.state_machine = StateMachine({

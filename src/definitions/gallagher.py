@@ -3,13 +3,10 @@ P.I. Gallagher: The Missing Art
 
 Animation and entity definitions for Gallagher (player character).
 
-Spritesheet: gallagher.png — 57x112 pixels, 3 columns x 4 rows of 19x28 frames.
-  Row 0 (frames 0-2): facing down
-  Row 1 (frames 3-5): facing up
-  Row 2 (frames 6-8): facing right
-  Row 3 (frames 9-11): facing left
-
-Each row: frame 0 = idle/neutral, frames 1-2 = walk cycle steps.
+Spritesheet: gallagher.png — 80x101 pixels, 4 columns x 3 rows of 20x33 frames.
+  Row 0 (frames 0-3): walking down (frames 0, 1 used)
+  Row 1 (frames 4-7): looking/walking up (frames 4, 5 used)
+  Row 2 (frames 8-11): walking right (frames 8, 9, 10, 11 used; flipped horizontally for facing left)
 """
 
 from typing import Any, Dict
@@ -19,27 +16,27 @@ GALLAGHER_DEFS: Dict[str, Any] = {
     "animations": {
         # Idle — single frame per direction
         "idle-down": {"frames": [0], "texture": "gallagher"},
-        "idle-up": {"frames": [3], "texture": "gallagher"},
-        "idle-right": {"frames": [6], "texture": "gallagher"},
-        "idle-left": {"frames": [9], "texture": "gallagher"},
-        # Walk — 4-step cycle: neutral, step A, neutral, step B
+        "idle-up": {"frames": [4], "texture": "gallagher"},
+        "idle-right": {"frames": [8], "texture": "gallagher"},
+        "idle-left": {"frames": [8], "texture": "gallagher"},
+        # Walk cycles
         "walk-down": {
-            "frames": [0, 1, 0, 2],
-            "interval": 0.15,
+            "frames": [0, 1],
+            "interval": 0.20,
             "texture": "gallagher",
         },
         "walk-up": {
-            "frames": [3, 4, 3, 5],
-            "interval": 0.15,
+            "frames": [4, 5],
+            "interval": 0.20,
             "texture": "gallagher",
         },
         "walk-right": {
-            "frames": [6, 7, 6, 8],
+            "frames": [8, 9, 10, 11],
             "interval": 0.15,
             "texture": "gallagher",
         },
         "walk-left": {
-            "frames": [9, 10, 9, 11],
+            "frames": [8, 9, 10, 11],
             "interval": 0.15,
             "texture": "gallagher",
         },
