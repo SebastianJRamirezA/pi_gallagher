@@ -205,35 +205,56 @@ class StealthMinigameState(BaseState):
     def _build_obstacles(self) -> None:
         """Static cover objects the player can hide behind."""
         self.obstacles: List[pygame.Rect] = [
-            # Room 1 — starting area
-            pygame.Rect(70, 20, 40, 10),
-            pygame.Rect(70, 20, 10, 60),
-            pygame.Rect(140, 70, 50, 10),
-            pygame.Rect(30, 110, 10, 50),
+            # ── Zone 1: Starting area ──
+            # Top wall with gap on the right
+            pygame.Rect(60, 10, 80, 8),
+            # Left vertical cover
+            pygame.Rect(60, 10, 8, 70),
+            # Bottom shelf
+            pygame.Rect(30, 120, 60, 8),
+            # Small crate
+            pygame.Rect(130, 90, 16, 16),
 
-            # Corridor
-            pygame.Rect(200, 0, 10, 60),
-            pygame.Rect(200, 100, 10, 80),
-            pygame.Rect(260, 40, 10, 60),
+            # ── Corridor 1→2: narrow passage ──
+            # Top wall (gap at y~60-90)
+            pygame.Rect(190, 0, 8, 55),
+            pygame.Rect(190, 100, 8, 120),
+            # Right side narrowing
+            pygame.Rect(250, 30, 8, 50),
+            pygame.Rect(250, 130, 8, 60),
 
-            # Room 2 — central hall
-            pygame.Rect(320, 20, 60, 10),
-            pygame.Rect(350, 80, 10, 40),
-            pygame.Rect(420, 50, 10, 70),
-            pygame.Rect(300, 140, 80, 10),
+            # ── Zone 2: Central hall ──
+            # Top wall segment
+            pygame.Rect(300, 15, 70, 8),
+            # Central pillar (forces detour)
+            pygame.Rect(360, 70, 20, 20),
+            # Bottom wall segment
+            pygame.Rect(310, 150, 60, 8),
+            # Right wall of hall
+            pygame.Rect(440, 40, 8, 60),
+            pygame.Rect(440, 130, 8, 50),
 
-            # Room 3 — approach to goal
-            pygame.Rect(500, 20, 50, 10),
-            pygame.Rect(550, 20, 10, 70),
-            pygame.Rect(500, 120, 10, 50),
-            pygame.Rect(600, 80, 60, 10),
-            pygame.Rect(640, 130, 10, 50),
+            # ── Corridor 2→3 ──
+            pygame.Rect(490, 0, 8, 70),
+            pygame.Rect(490, 110, 8, 110),
 
-            # Far room
-            pygame.Rect(700, 40, 50, 10),
-            pygame.Rect(700, 110, 10, 60),
+            # ── Zone 3: Pre-goal gauntlet ──
+            # Top cover
+            pygame.Rect(540, 20, 50, 8),
+            # Vertical divider
+            pygame.Rect(590, 20, 8, 55),
+            # Bottom L-shape
+            pygame.Rect(530, 130, 8, 50),
+            pygame.Rect(530, 130, 60, 8),
+            # Right side covers near goal
+            pygame.Rect(640, 70, 50, 8),
+            pygame.Rect(680, 70, 8, 50),
 
-            # World border walls
+            # ── Zone 4: Goal room ──
+            pygame.Rect(720, 30, 40, 8),
+            pygame.Rect(710, 100, 8, 70),
+
+            # ── World border walls ──
             pygame.Rect(0, 0, self.world_width, 2),
             pygame.Rect(0, self.world_height - 2, self.world_width, 2),
             pygame.Rect(0, 0, 2, self.world_height),
@@ -241,54 +262,57 @@ class StealthMinigameState(BaseState):
         ]
 
     def _build_guards(self) -> None:
-        """Guards initialized with active patrols for maximum difficulty."""
+        """Guards with patrols designed to never cross obstacles."""
         self.guards: List[Dict] = [
-            # Guardia 1: Patrulla horizontal en la zona inicial
-            _make_guard(180, 75, 10, 10, angle=180, fov=70, distance=80,
+            # Guardia 1: Patrulla horizontal dentro del recinto L
+            _make_guard(150, 50, 10, 10, angle=180, fov=55, distance=60,
                         patrol=[
-                            {"x": 180, "y": 75, "angle": 180},
-                            {"x": 120, "y": 75, "angle": 180},
-                            {"x": 120, "y": 75, "angle": 0},
-                            {"x": 180, "y": 75, "angle": 0},
+                            {"x": 150, "y": 50, "angle": 180},
+                            {"x": 85, "y": 50, "angle": 180},
+                            {"x": 85, "y": 50, "angle": 0},
+                            {"x": 150, "y": 50, "angle": 0},
                         ]),
-            # Guardia 2: Patrulla vertical en el corredor
-            _make_guard(230, 65, 10, 10, angle=90, fov=60, distance=70,
+            # Guardia 2: Patrulla vertical en el corredor (entre las dos paredes)
+            _make_guard(220, 60, 10, 10, angle=90, fov=50, distance=55,
                         patrol=[
-                            {"x": 230, "y": 65, "angle": 90},
-                            {"x": 230, "y": 140, "angle": 90},
-                            {"x": 230, "y": 65, "angle": 270},
+                            {"x": 220, "y": 60, "angle": 90},
+                            {"x": 220, "y": 130, "angle": 90},
+                            {"x": 220, "y": 130, "angle": 270},
+                            {"x": 220, "y": 60, "angle": 270},
                         ]),
-            # Guardia 3: Patrulla horizontal alta en la sala central
-            _make_guard(400, 35, 10, 10, angle=180, fov=80, distance=90,
+            # Guardia 3: Patrulla horizontal alta en sala central
+            _make_guard(420, 30, 10, 10, angle=180, fov=60, distance=65,
                         patrol=[
-                            {"x": 400, "y": 35, "angle": 180},
-                            {"x": 310, "y": 35, "angle": 180},
-                            {"x": 310, "y": 35, "angle": 0},
-                            {"x": 400, "y": 35, "angle": 0},
+                            {"x": 420, "y": 30, "angle": 180},
+                            {"x": 310, "y": 30, "angle": 180},
+                            {"x": 310, "y": 30, "angle": 0},
+                            {"x": 420, "y": 30, "angle": 0},
                         ]),
-            # Guardia 4: Patrulla horizontal media en la sala central
-            _make_guard(310, 110, 10, 10, angle=0, fov=65, distance=75,
+            # Guardia 4: Patrulla horizontal baja en sala central
+            _make_guard(310, 115, 10, 10, angle=0, fov=55, distance=60,
                         patrol=[
-                            {"x": 310, "y": 110, "angle": 0},
-                            {"x": 400, "y": 110, "angle": 0},
-                            {"x": 400, "y": 110, "angle": 180},
-                            {"x": 310, "y": 110, "angle": 180},
+                            {"x": 310, "y": 115, "angle": 0},
+                            {"x": 420, "y": 115, "angle": 0},
+                            {"x": 420, "y": 115, "angle": 180},
+                            {"x": 310, "y": 115, "angle": 180},
                         ]),
-            # Guardia 5: Patrulla vertical cubriendo el paso previo a la meta
-            _make_guard(580, 40, 10, 10, angle=90, fov=75, distance=80,
+            # Guardia 5: Patrulla en L en zona pre-meta
+            _make_guard(620, 45, 10, 10, angle=180, fov=55, distance=60,
                         patrol=[
-                            {"x": 580, "y": 40, "angle": 90},
-                            {"x": 580, "y": 140, "angle": 90},
-                            {"x": 580, "y": 40, "angle": 270},
+                            {"x": 620, "y": 45, "angle": 180},
+                            {"x": 545, "y": 45, "angle": 90},
+                            {"x": 545, "y": 120, "angle": 0},
+                            {"x": 620, "y": 120, "angle": 270},
+                            {"x": 620, "y": 45, "angle": 180},
                         ]),
-            # Guardia 6: Patrulla en 'L' patrullando el acceso final
-            _make_guard(700, 80, 10, 10, angle=180, fov=70, distance=85,
+            # Guardia 6: Patrulla en L en zona del objetivo
+            _make_guard(750, 70, 10, 10, angle=180, fov=55, distance=65,
                         patrol=[
-                            {"x": 700, "y": 80, "angle": 180},
-                            {"x": 630, "y": 80, "angle": 90},
-                            {"x": 630, "y": 160, "angle": 0},
-                            {"x": 700, "y": 160, "angle": 270},
-                            {"x": 700, "y": 80, "angle": 180},
+                            {"x": 750, "y": 70, "angle": 180},
+                            {"x": 660, "y": 70, "angle": 90},
+                            {"x": 660, "y": 160, "angle": 0},
+                            {"x": 750, "y": 160, "angle": 270},
+                            {"x": 750, "y": 70, "angle": 180},
                         ]),
         ]
 
@@ -379,9 +403,24 @@ class StealthMinigameState(BaseState):
                     is_moving = True
                     speed = guard["patrol_speed"] * dt
                     ratio = min(speed / dist, 1.0)
-                    guard["fx"] += (tx - gx) * ratio
-                    guard["fy"] += (ty - gy) * ratio
-                    guard["angle"] = math.degrees(math.atan2(ty - gy, tx - gx))
+                    new_x = guard["fx"] + (tx - gx) * ratio
+                    new_y = guard["fy"] + (ty - gy) * ratio
+
+                    # Collision check: don't move into obstacles
+                    guard_rect = pygame.Rect(int(new_x), int(new_y), 10, 10)
+                    blocked = False
+                    for obs in self.obstacles:
+                        if guard_rect.colliderect(obs):
+                            blocked = True
+                            break
+
+                    if not blocked:
+                        guard["fx"] = new_x
+                        guard["fy"] = new_y
+                        guard["angle"] = math.degrees(math.atan2(ty - gy, tx - gx))
+                    else:
+                        # Skip to next waypoint if blocked
+                        guard["patrol_index"] = (guard["patrol_index"] + 1) % len(patrol)
 
             guard["rect"].x = int(guard["fx"])
             guard["rect"].y = int(guard["fy"])
