@@ -1,11 +1,4 @@
-"""
-P.I. Gallagher: The Missing Art
-
-PhaseASubstate — Filing Cabinet phase.
-Navigate a filing cabinet organized by categories, follow cross-references
-to find the expedition file (Exp. #12-03-MR). Max 5 drawer openings.
-"""
-
+import random
 import pygame
 
 from gale.state import BaseState
@@ -56,6 +49,7 @@ class PhaseASubstate(BaseState):
         # Card overlay is open — close it and check win/fail
         if self.viewing_card:
             if input_id == "space":
+                settings.SOUNDS["bookClose"].play()
                 self.viewing_card = False
                 self.current_card = None
                 if self.found_goal:
@@ -66,23 +60,34 @@ class PhaseASubstate(BaseState):
             return
 
         # Navigation
+        moved = False
         if input_id == "move_left":
             self.selected_cat = max(0, self.selected_cat - 1)
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(self.selected_drawer, max_d)
+            moved = True
         elif input_id == "move_right":
             self.selected_cat = min(len(CATEGORY_ORDER) - 1, self.selected_cat + 1)
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(self.selected_drawer, max_d)
+            moved = True
         elif input_id == "move_up":
             self.selected_drawer = max(0, self.selected_drawer - 1)
+            moved = True
         elif input_id == "move_down":
             max_d = len(self._get_drawers(self.selected_cat)) - 1
             self.selected_drawer = min(max_d, self.selected_drawer + 1)
+            moved = True
         elif input_id == "space":
             self._open_drawer()
 
+        if moved:
+            settings.SOUNDS[f"bookFlip{random.randint(1, 3)}"].play()
+
     def _open_drawer(self):
+        # Play drawer/card open sound effect
+        settings.SOUNDS[f"bookPlace{random.randint(1, 3)}"].play()
+
         key = (self.selected_cat, self.selected_drawer)
         drawers = self._get_drawers(self.selected_cat)
         self.current_card = drawers[self.selected_drawer]

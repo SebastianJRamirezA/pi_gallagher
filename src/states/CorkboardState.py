@@ -13,7 +13,7 @@ import pygame
 
 from gale.input_handler import InputData, KeyboardData
 from gale.state import BaseState
-from gale.ui import Button, Label, Panel, TextBox, Theme, UIManager, Window
+from gale.ui import Label, Panel, TextBox, Theme, UIManager, Window
 
 import settings
 from src.data.cards import LAUREN_HINTS, OPEN_QUESTIONS
@@ -28,7 +28,6 @@ from src.ui.theme import (
     COLOR_PAPER_SELECTED,
     COLOR_PAPER_THREADED,
     COLOR_SUCCESS,
-    NOIR_BUTTON_THEME,
     NOIR_CARD_THEME,
     NOIR_CORK_THEME,
     NOIR_DIALOGUE_THEME,
@@ -55,7 +54,7 @@ class CorkboardState(BaseState):
         self.modal_active: bool = False
         self.details_active: bool = False
         self.details_card: Optional[Dict[str, Any]] = None
-        self.details_thread_btn: Optional[Button] = None
+        self.details_thread_lbl: Optional[Label] = None
 
         self._build_ui()
 
@@ -257,8 +256,7 @@ class CorkboardState(BaseState):
             win_w,
             win_h,
             title=title_str,
-            closable=True,
-            on_close=self._close_details,
+            closable=False,
             theme=NOIR_DIALOGUE_THEME,
         )
 
@@ -268,7 +266,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 24,
             meta_str,
-            font=settings.FONTS["medium"],
+            font=settings.FONTS["small"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -280,7 +278,7 @@ class CorkboardState(BaseState):
             win_x + 12,
             win_y + 40,
             kw_str,
-            font=settings.FONTS["medium"],
+            font=settings.FONTS["small"],
             color=COLOR_ACCENT_RED,
             theme=NOIR_DIALOGUE_THEME,
         )
@@ -311,37 +309,31 @@ class CorkboardState(BaseState):
         )
         details_window.add_child(desc_tb)
 
-        # Row 4: Action Buttons inside details screen
+        # Row 4: Static Action Prompt Labels (Non-selectable)
         is_threaded = cid in self.threaded_ids
-        btn_thread_text = (
+        lbl_thread_text = (
             "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
         )
 
-        def on_details_thread_toggle():
-            self._toggle_thread(cid)
-            self._update_details_thread_button()
-
-        self.details_thread_btn = Button(
-            win_x + 10,
-            win_y + 168,
-            190,
-            24,
-            btn_thread_text,
-            on_click=on_details_thread_toggle,
-            theme=NOIR_BUTTON_THEME,
+        self.details_thread_lbl = Label(
+            win_x + 12,
+            win_y + 172,
+            lbl_thread_text,
+            font=settings.FONTS["medium"],
+            color=COLOR_BRASS_LIGHT,
+            theme=NOIR_DIALOGUE_THEME,
         )
-        btn_close = Button(
-            win_x + win_w - 115,
-            win_y + 168,
-            105,
-            24,
+        lbl_close = Label(
+            win_x + win_w - 120,
+            win_y + 172,
             "Cerrar [D / ESC]",
-            on_click=self._close_details,
-            theme=NOIR_BUTTON_THEME,
+            font=settings.FONTS["medium"],
+            color=COLOR_BRASS_LIGHT,
+            theme=NOIR_DIALOGUE_THEME,
         )
 
-        details_window.add_child(self.details_thread_btn)
-        details_window.add_child(btn_close)
+        details_window.add_child(self.details_thread_lbl)
+        details_window.add_child(lbl_close)
 
         # Wrap in ModalOverlay for full input isolation
         self.modal_overlay = ModalOverlay(
@@ -353,19 +345,20 @@ class CorkboardState(BaseState):
         self.details_active = True
 
     def _update_details_thread_button(self) -> None:
-        if self.details_card and self.details_thread_btn:
+        if self.details_card and self.details_thread_lbl:
             cid = self.details_card["id"]
             is_threaded = cid in self.threaded_ids
-            self.details_thread_btn.text = (
+            lbl_text = (
                 "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
             )
+            self.details_thread_lbl.set_text(lbl_text)
 
     def _close_details(self) -> None:
         """Close the Card Details Screen and restore focus to the card grid."""
         if self.details_active:
             self.modal_overlay = None
             self.details_card = None
-            self.details_thread_btn = None
+            self.details_thread_lbl = None
             self.details_active = False
 
             # Restore focus to card grid
@@ -389,8 +382,7 @@ class CorkboardState(BaseState):
             modal_w,
             modal_h,
             title=title,
-            closable=True,
-            on_close=self._close_modal,
+            closable=False,
             theme=NOIR_DIALOGUE_THEME,
         )
 
@@ -415,16 +407,16 @@ class CorkboardState(BaseState):
         )
         modal_window.add_child(modal_textbox)
 
-        btn_dismiss = Button(
+        # Static Action Prompt Label (Non-selectable)
+        lbl_dismiss = Label(
             modal_x + modal_w // 2 - 50,
-            modal_y + modal_h - 30,
-            100,
-            22,
+            modal_y + modal_h - 22,
             "Aceptar [ENTER]",
-            on_click=self._close_modal,
-            theme=NOIR_BUTTON_THEME,
+            font=settings.FONTS["medium"],
+            color=COLOR_BRASS_LIGHT,
+            theme=NOIR_DIALOGUE_THEME,
         )
-        modal_window.add_child(btn_dismiss)
+        modal_window.add_child(lbl_dismiss)
 
         # Wrap in ModalOverlay for full input isolation
         self.modal_overlay = ModalOverlay(
@@ -469,7 +461,7 @@ class CorkboardState(BaseState):
 
         if len(self.threaded_ids) < 2:
             self._show_modal(
-                "PIZARRA DE CORCHO",
+                "ADVERTENCIA",
                 "Debes seleccionar al menos dos tarjetas con el hilo rojo para intentar formular una deducción.",
             )
             return
@@ -543,7 +535,7 @@ class CorkboardState(BaseState):
                 self.modal_overlay.on_confirm()
             elif input_id in self.ui.navigate_actions:
                 self.modal_overlay.on_navigate(self.ui.navigate_actions[input_id])
-                return
+            return
 
         # 2. Main corkboard screen shortcuts:
         if input_id == "quit":

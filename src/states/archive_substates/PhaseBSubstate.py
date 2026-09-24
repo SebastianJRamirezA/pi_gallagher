@@ -99,12 +99,14 @@ class PhaseBSubstate(BaseState):
         # Intro screen — skip with confirm
         if self.show_intro:
             if input_id == "space":
+                settings.SOUNDS["bookOpen"].play()
                 self._start_clock()
             return
 
         # Document view overlay
         if self.viewing_doc:
             if input_id == "space":
+                settings.SOUNDS["bookClose"].play()
                 doc = self.current_doc
                 clue_id = doc.get("clue_id")
                 # Collect clue if relevant and not yet collected
@@ -125,23 +127,33 @@ class PhaseBSubstate(BaseState):
         # Grid navigation
         col = self.selected_doc % self.DOC_COLS
         row = self.selected_doc // self.DOC_COLS
+        moved = False
 
         if input_id == "move_left" and col > 0:
             self.selected_doc -= 1
+            moved = True
         elif input_id == "move_right" and col < self.DOC_COLS - 1:
             next_idx = self.selected_doc + 1
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
+                moved = True
         elif input_id == "move_up" and row > 0:
             self.selected_doc -= self.DOC_COLS
+            moved = True
         elif input_id == "move_down" and row < self.DOC_ROWS - 1:
             next_idx = self.selected_doc + self.DOC_COLS
             if next_idx < len(self.shuffled_docs):
                 self.selected_doc = next_idx
+                moved = True
         elif input_id == "space":
             self._examine_document()
 
+        if moved:
+            settings.SOUNDS[f"bookFlip{random.randint(1, 3)}"].play()
+
     def _examine_document(self):
+        settings.SOUNDS[f"bookPlace{random.randint(1, 3)}"].play()
+
         doc = self.shuffled_docs[self.selected_doc]
         self.current_doc = doc
 

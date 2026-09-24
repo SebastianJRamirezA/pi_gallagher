@@ -157,6 +157,14 @@ SOUNDS = {
     "footstep07": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep07.ogg"),
     "footstep08": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep08.ogg"),
     "footstep09": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "footstep09.ogg"),
+    "bookClose": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookClose.ogg"),
+    "bookFlip1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookFlip1.ogg"),
+    "bookFlip2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookFlip2.ogg"),
+    "bookFlip3": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookFlip3.ogg"),
+    "bookOpen": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookOpen.ogg"),
+    "bookPlace1": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookPlace1.ogg"),
+    "bookPlace2": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookPlace2.ogg"),
+    "bookPlace3": pygame.mixer.Sound(BASE_DIR / "assets" / "sounds" / "bookPlace3.ogg"),
 }
 
 for i in range(10):
