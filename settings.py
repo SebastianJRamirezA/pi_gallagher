@@ -93,7 +93,7 @@ FRAMES = {
     "indoor_tiles": frames.generate_frames(TEXTURES["indoor_tiles"], 16, 16),
     "player": frames.generate_frames(TEXTURES["player"], 16, 18),
     "npc": frames.generate_frames(TEXTURES["npc"], 16, 18),
-    "gallagher": frames.generate_frames(TEXTURES["gallagher"], 19, 28),
+    "gallagher": frames.generate_frames(TEXTURES["gallagher"], 20, 33),
     "gallagher_shoot": frames.generate_frames(TEXTURES["gallagher_shoot"], 20, 31),
     "bandit": frames.generate_frames(TEXTURES["bandit"], 20, 37),
     "bandit_hit": frames.generate_frames(TEXTURES["bandit_hit"], 30, 33),

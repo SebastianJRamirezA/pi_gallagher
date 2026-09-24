@@ -109,15 +109,14 @@ class GuardActor(Actor):
         frame_idx = self.current_animation.get_current_frame()
         frame = settings.FRAMES[self.texture][frame_idx]
         texture = settings.TEXTURES[self.texture]
-        image = pygame.Surface((frame.width, frame.height), pygame.SRCALPHA)
-        image.blit(texture, (0, 0), frame)
+        sub = texture.subsurface(frame)
         if self.direction == "left":
-            image = pygame.transform.flip(image, True, False)
+            sub = pygame.transform.flip(sub, True, False)
         # Centrar el sprite de 20x20 sobre el centro del hitbox (10x10)
         pos = pygame.Rect(round(self.x - 5), round(self.y - 5), frame.width, frame.height)
         if camera is not None:
             pos = camera.apply(pos)
-        surface.blit(image, pos)
+        surface.blit(sub, pos)
 
 
 def _make_guard(

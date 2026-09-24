@@ -9,6 +9,7 @@ import settings
 from src.entity.Actor import Actor
 from src.definitions.gallagher import GALLAGHER_DEFS
 
+
 class Player(Actor):
     """
     Player character driven by a per-entity StateMachine (idle / walk).
@@ -34,6 +35,9 @@ class Player(Actor):
         # Camera reference set by World before render
         self.camera = None
 
+        # Cache for flipped surfaces when facing left
+        self._flipped_frames: Dict[int, pygame.Surface] = {}
+
         # Entity state machine (lazy imports avoid circular dependencies)
         from src.states.entity.player.GallagherIdleState import GallagherIdleState
         from src.states.entity.player.GallagherWalkState import GallagherWalkState
@@ -50,13 +54,13 @@ class Player(Actor):
 
     @property
     def rect(self) -> pygame.Rect:
-        """Full 19x28 sprite bounds — matches what is rendered and is used for interaction detection."""
-        return pygame.Rect(round(self.x), round(self.y), 19, 28)
+        """Full 20x33 sprite bounds — matches what is rendered and is used for interaction detection."""
+        return pygame.Rect(round(self.x), round(self.y), 20, 33)
 
     @property
     def collision_rect(self) -> pygame.Rect:
-        """14x14 foot-box used exclusively for tile walkability and door collision."""
-        return pygame.Rect(round(self.x + 4), round(self.y + 15), 13, 13)
+        """13x14 foot-box used exclusively for tile walkability and door collision."""
+        return pygame.Rect(round(self.x + 4), round(self.y + 15), 13, 14)
 
     # ── State / animation helpers ──────────────────────────────────────
 
@@ -64,7 +68,9 @@ class Player(Actor):
         self.state_machine.change(name)
 
     def change_animation(self, name: str) -> None:
-        self.current_animation = self.animations[name]
+        if self.current_animation != self.animations.get(name):
+            self.current_animation = self.animations[name]
+            self.current_animation.reset()
 
     # ── Update ─────────────────────────────────────────────────────────
 
@@ -76,13 +82,21 @@ class Player(Actor):
     # ── Render ─────────────────────────────────────────────────────────
 
     def render_sprite(self, surface: pygame.Surface, frame_index: int) -> None:
-        """Draw the current animation frame, applying camera transform."""
+        """Draw the current animation frame, applying camera transform and flipping if facing left."""
         texture = settings.TEXTURES[self.texture]
         frame = settings.FRAMES[self.texture][frame_index]
         pos = pygame.Rect(round(self.x), round(self.y), frame.width, frame.height)
         if self.camera is not None:
             pos = self.camera.apply(pos)
-        surface.blit(texture, pos, frame)
+
+        if self.direction == "left":
+            if frame_index not in self._flipped_frames:
+                self._flipped_frames[frame_index] = pygame.transform.flip(
+                    texture.subsurface(frame), True, False
+                )
+            surface.blit(self._flipped_frames[frame_index], pos)
+        else:
+            surface.blit(texture, pos, frame)
 
     def render(self, surface: pygame.Surface, camera: Any = None) -> None:
         self.camera = camera
@@ -93,6 +107,7 @@ class Player(Actor):
     def on_input(self, input_id: str, input_data: Any) -> None:
         if input_id in self.held:
             self.held[input_id] = input_data.pressed or not input_data.released
+
 
 def _create_animations(
     animation_defs: Dict[str, Dict[str, Any]],
@@ -108,3 +123,4 @@ def _create_animations(
         anim.texture_id = defn.get("texture", "gallagher")
         animations[name] = anim
     return animations
+
