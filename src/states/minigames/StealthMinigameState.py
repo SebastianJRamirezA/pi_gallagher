@@ -18,6 +18,7 @@ from gale.animation import Animation
 from src.entity.Player import Player
 from src.entity.Actor import Actor
 import settings
+from src.localization import tr
 
 
 def _segments_from_rect(rect: pygame.Rect) -> List[Tuple[Tuple[float, float], Tuple[float, float]]]:
@@ -79,7 +80,7 @@ class GuardActor(Actor):
         x: float,
         y: float,
         texture: str = "guard",
-        name: str = "Guardia",
+        name: str = "Guard",
         direction: str = "down",
     ) -> None:
         super().__init__(x, y, texture, name, direction=direction)
@@ -136,7 +137,7 @@ def _make_guard(
     else:
         initial_dir = "right"
 
-    actor = GuardActor(x, y, texture, "Guardia", direction=initial_dir)
+    actor = GuardActor(x, y, texture, tr("Guardia"), direction=initial_dir)
     guard = {
         "actor": actor,
         "rect": pygame.Rect(x, y, w, h),

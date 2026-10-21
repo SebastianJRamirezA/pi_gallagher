@@ -14,6 +14,7 @@ from gale.timer import Timer
 
 import settings
 from src.data.archive_data import COLORS, CLUES, SUCCESS_TEXT
+from src.localization import localize, tr
 
 
 class SuccessSubstate(BaseState):
@@ -45,7 +46,7 @@ class SuccessSubstate(BaseState):
         # Title
         render_text(
             surface,
-            "MISIÓN COMPLETADA",
+            tr("MISIÓN COMPLETADA"),
             settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             15,
@@ -57,7 +58,7 @@ class SuccessSubstate(BaseState):
         # Show collected clues
         y = 55
         for clue_id in self.parent.collected_clues:
-            clue = CLUES.get(clue_id)
+            clue = localize(CLUES.get(clue_id))
             if clue is None:
                 continue
 
@@ -79,7 +80,7 @@ class SuccessSubstate(BaseState):
             keywords_text = ", ".join(clue["claves"])
             render_text(
                 surface,
-                f"Claves: {keywords_text}",
+                f"{tr('Claves')}: {keywords_text}",
                 settings.FONTS["medium"],
                 card_rect.x + 10,
                 y + 20,
@@ -88,7 +89,7 @@ class SuccessSubstate(BaseState):
             y += 50
 
         # Narrative conclusion
-        lines = SUCCESS_TEXT.split("\n")
+        lines = localize(SUCCESS_TEXT).split("\n")
         y = max(y + 5, 210)
         for line in lines:
             if line:

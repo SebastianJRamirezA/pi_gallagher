@@ -13,6 +13,7 @@ from gale.state import BaseState
 from gale.ui import Label, Panel, Theme
 
 import settings
+from src.localization import tr
 from src.ui.theme import COLOR_ACCENT_RED, COLOR_BRASS, COLOR_MUTED, COLOR_SUCCESS
 
 
@@ -31,7 +32,7 @@ class SafeCrackerState(BaseState):
         self.overshot = False
         self.stutter_time = 0.0
         self.click_number = -1
-        self.message = "Escucha la cerradura. Ajusta el primer número."
+        self.message = tr("Escucha la cerradura. Ajusta el primer número.")
         self.complete = False
         self.click_sound = self._make_tone(170)
         self.heavy_click_sound = self._make_tone(105)
@@ -84,7 +85,7 @@ class SafeCrackerState(BaseState):
         self.lbl_title = Label(
             safe_x + 16,
             safe_y + 12,
-            "CAJA FUERTE",
+            tr("CAJA FUERTE"),
             font=settings.FONTS["large"],
             color=pygame.Color(*self.COLOR_GOLD),
             theme=self.safe_theme,
@@ -93,7 +94,7 @@ class SafeCrackerState(BaseState):
         self.lbl_tumbler = Label(
             safe_x + 16,
             safe_y + 34,
-            "DISCO 1 / 3",
+            tr("DISCO 1 / 3"),
             font=settings.FONTS["medium"],
             color=pygame.Color(*self.COLOR_GOLD_DARK),
             theme=self.safe_theme,
@@ -103,7 +104,7 @@ class SafeCrackerState(BaseState):
         self.lbl_stress = Label(
             safe_x + safe_w - 108,
             safe_y + 12,
-            "ESTRÉS",
+            tr("ESTRÉS"),
             font=settings.FONTS["medium"],
             color=pygame.Color(*self.COLOR_GOLD_DARK),
             theme=self.safe_theme,
@@ -112,7 +113,7 @@ class SafeCrackerState(BaseState):
         self.lbl_timer = Label(
             safe_x + safe_w - 108,
             safe_y + 42,
-            f"TIEMPO: {int(self.timer)}s",
+            f"{tr('TIEMPO:')} {int(self.timer)}s",
             font=settings.FONTS["medium"],
             color=pygame.Color(*self.COLOR_GOLD_DARK),
             theme=self.safe_theme,
@@ -165,7 +166,7 @@ class SafeCrackerState(BaseState):
         self.lbl_controls = Label(
             safe_x + 12,
             inst_y + inst_h + 6,
-            "Flechitas: Moverse  |  SHIFT: Aumentar precisión  |  ESPACIO: Fijar disco",
+            tr("Flechitas: Moverse  |  SHIFT: Aumentar precisión  |  ESPACIO: Fijar disco"),
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=self.safe_theme,
@@ -205,7 +206,7 @@ class SafeCrackerState(BaseState):
             if not self.overshot and self._passed_target(previous, self.dial, self.turning):
                 self.overshot = True
                 self.stage = 0
-                self.message = "Demasiado lejos. Da el giro completo para reiniciar."
+                self.message = tr("Demasiado lejos. Da el giro completo para reiniciar.")
                 self._play(self.alarm_sound)
             elif not self.overshot and current_number != self.click_number:
                 self.click_number = current_number
@@ -218,17 +219,17 @@ class SafeCrackerState(BaseState):
             self.dial = 0.0
             self.overshot = False
             self.click_number = 0
-            self.message = "Reiniciado. Acércate con más cuidado."
+            self.message = tr("Reiniciado. Acércate con más cuidado.")
 
         if self.timer <= 0:
             Timer.clear()
 
         # Update dynamic labels
-        self.lbl_tumbler.set_text(f"DISCO {min(self.stage + 1, 3)} / 3")
+        self.lbl_tumbler.set_text(f"{tr('DISCO')} {min(self.stage + 1, 3)} / 3")
         self.lbl_dial_val.set_text(f"{self._dial_number():02d}")
         self.lbl_message.set_text(self.message)
         self.lbl_message.color = COLOR_ACCENT_RED if self.overshot else pygame.Color(*self.COLOR_TEXT)
-        self.lbl_timer.set_text(f"TIEMPO: {max(0, int(self.timer))}s")
+        self.lbl_timer.set_text(f"{tr('TIEMPO:')} {max(0, int(self.timer))}s")
 
     def _dial_number(self) -> int:
         return int(round(self.dial / 3.6)) % 100
@@ -271,15 +272,15 @@ class SafeCrackerState(BaseState):
                 for c in ("C15", "C16", "C09", "C11", "C17"):
                     story.add_card(c)
                 story.flags["safecracker_completed"] = True
-                self.message = "Los pestillos ceden. La caja fuerte está abierta."
+                self.message = tr("Los pestillos ceden. La caja fuerte está abierta.")
                 pygame.mixer_music.stop()
                 self.state_machine.pop()
             else:
                 self.dial = 0.0
                 self.click_number = -1
-                self.message = "Bien. El siguiente pestillo escucha."
+                self.message = tr("Bien. El siguiente pestillo escucha.")
         else:
-            self.message = "Ese no es el número. Acércate más y escucha."
+            self.message = tr("Ese no es el número. Acércate más y escucha.")
 
     def _render_filigree(self, surface: pygame.Surface, x: int, y: int, flip_x: bool = False, flip_y: bool = False) -> None:
         """Draw decorative 1930s art-deco gold corner ornaments on the safe door."""

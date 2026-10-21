@@ -46,6 +46,9 @@ pip install -r requirements.txt
 python main.py
 ```
 
+The game starts in English. Press **L** on the title screen to switch between
+English and Spanish before starting the story.
+
 ## Assets & Attributions
 
 This project utilizes original assets along with third-party open-source resources. We express our gratitude to the creators who made their work available to the community:

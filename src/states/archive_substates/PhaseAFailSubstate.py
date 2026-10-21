@@ -13,6 +13,7 @@ from gale.text import render_text
 
 import settings
 from src.data.archive_data import COLORS, PHASE_A_FAIL_TEXT
+from src.localization import localize, tr
 
 
 class PhaseAFailSubstate(BaseState):
@@ -52,7 +53,7 @@ class PhaseAFailSubstate(BaseState):
             surface.blit(overlay, (0, 0))
 
         # Fail text
-        lines = PHASE_A_FAIL_TEXT.split("\n")
+        lines = localize(PHASE_A_FAIL_TEXT).split("\n")
         y = 95
         for line in lines:
             if line:
@@ -71,7 +72,7 @@ class PhaseAFailSubstate(BaseState):
         if self.can_continue:
             render_text(
                 surface,
-                "ESPACIO para reintentar",
+                tr("ESPACIO para reintentar"),
                 settings.FONTS["medium"],
                 settings.VIRTUAL_WIDTH // 2,
                 200,

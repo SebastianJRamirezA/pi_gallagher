@@ -17,6 +17,7 @@ from gale.ui import Label, Panel, TextBox, Theme, UIManager, Window
 
 import settings
 from src.data.cards import LAUREN_HINTS, OPEN_QUESTIONS
+from src.localization import localize, tr
 from src.story.StoryManager import StoryManager
 from src.ui.theme import (
     COLOR_ACCENT_RED,
@@ -115,7 +116,7 @@ class CorkboardState(BaseState):
         bar_h = 29
 
         # Header Bar
-        header_text = f"PIZARRA DE INVESTIGACIÓN"
+        header_text = tr("PIZARRA DE INVESTIGACIÓN")
         self.header_label = Label(
             16,
             10,
@@ -126,7 +127,7 @@ class CorkboardState(BaseState):
         )
         self.card_grid.add_child(self.header_label)
 
-        counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
+        counter_text = f"{tr('Pistas')}: {len(self.cards)}  |  {tr('Hilos')}: {len(self.threaded_ids)}"
         self.counter_label = Label(
             344,
             12,
@@ -148,12 +149,12 @@ class CorkboardState(BaseState):
             sidebar_y,
             sidebar_w,
             sidebar_h,
-            title="DUDAS",
+            title=tr("DUDAS"),
             closable=False,
             theme=NOIR_SIDEBAR_THEME,
         )
 
-        questions = OPEN_QUESTIONS.get(self.visit, [])
+        questions = localize(OPEN_QUESTIONS.get(self.visit, []))
         q_text = "\n\n".join(f"• {q}" for q in questions)
         theme_q = Theme(
             font=settings.FONTS["small"],
@@ -183,7 +184,7 @@ class CorkboardState(BaseState):
         self.bar_hint_label = Label(
             20,
             bar_y + 6,
-            "Flechitas: Moverse  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda  |  ESC: Salir",
+            tr("Flechitas: Moverse  |  ESPACIO: Hilo  |  ENTER: Deducir  |  H: Ayuda  |  ESC: Salir"),
             font=settings.FONTS["small"],
             color=COLOR_MUTED,
             theme=NOIR_SIDEBAR_THEME,
@@ -248,7 +249,7 @@ class CorkboardState(BaseState):
         win_y = (settings.VIRTUAL_HEIGHT - win_h) // 2
 
         cid = card["id"]
-        title_str = f"EXPEDIENTE [{cid}]: {card['titulo']}"
+        title_str = f"{tr('EXPEDIENTE')} [{cid}]: {card['titulo']}"
 
         details_window = Window(
             win_x,
@@ -261,7 +262,10 @@ class CorkboardState(BaseState):
         )
 
         # Row 1: Tipo & Origen
-        meta_str = f"TIPO: {card['tipo'].upper()}   |   ORIGEN: {card.get('origen', 'Investigación')}"
+        meta_str = (
+            f"{tr('TIPO')}: {tr(card['tipo']).upper()}   |   "
+            f"{tr('ORIGEN')}: {card.get('origen', tr('Investigación'))}"
+        )
         meta_lbl = Label(
             win_x + 12,
             win_y + 24,
@@ -273,7 +277,7 @@ class CorkboardState(BaseState):
         details_window.add_child(meta_lbl)
 
         # Row 2: Palabras Clave
-        kw_str = f"PALABRAS CLAVE: {', '.join(card['claves'])}"
+        kw_str = f"{tr('PALABRAS CLAVE')}: {', '.join(card['claves'])}"
         kw_lbl = Label(
             win_x + 12,
             win_y + 40,
@@ -312,7 +316,9 @@ class CorkboardState(BaseState):
         # Row 4: Static Action Prompt Labels (Non-selectable)
         is_threaded = cid in self.threaded_ids
         lbl_thread_text = (
-            "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
+            tr("Quitar del Hilo Rojo [ESPACIO]")
+            if is_threaded
+            else tr("Conectar con Hilo Rojo [ESPACIO]")
         )
 
         self.details_thread_lbl = Label(
@@ -326,7 +332,7 @@ class CorkboardState(BaseState):
         lbl_close = Label(
             win_x + win_w - 120,
             win_y + 172,
-            "Cerrar [D / ESC]",
+            tr("Cerrar [D / ESC]"),
             font=settings.FONTS["medium"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
@@ -349,7 +355,9 @@ class CorkboardState(BaseState):
             cid = self.details_card["id"]
             is_threaded = cid in self.threaded_ids
             lbl_text = (
-                "Quitar del Hilo Rojo [ESPACIO]" if is_threaded else "Conectar con Hilo Rojo [ESPACIO]"
+                tr("Quitar del Hilo Rojo [ESPACIO]")
+                if is_threaded
+                else tr("Conectar con Hilo Rojo [ESPACIO]")
             )
             self.details_thread_lbl.set_text(lbl_text)
 
@@ -411,7 +419,7 @@ class CorkboardState(BaseState):
         lbl_dismiss = Label(
             modal_x + modal_w // 2 - 50,
             modal_y + modal_h - 22,
-            "Aceptar [ENTER]",
+            tr("Aceptar [ENTER]"),
             font=settings.FONTS["medium"],
             color=COLOR_BRASS_LIGHT,
             theme=NOIR_DIALOGUE_THEME,
@@ -448,7 +456,7 @@ class CorkboardState(BaseState):
         for btn in self.card_buttons:
             btn.is_threaded = btn.card_data["id"] in self.threaded_ids
 
-        counter_text = f"Pistas: {len(self.cards)}  |  Hilos: {len(self.threaded_ids)}"
+        counter_text = f"{tr('Pistas')}: {len(self.cards)}  |  {tr('Hilos')}: {len(self.threaded_ids)}"
         self.counter_label.set_text(counter_text)
 
     def _attempt_deduction(self) -> None:
@@ -461,8 +469,8 @@ class CorkboardState(BaseState):
 
         if len(self.threaded_ids) < 2:
             self._show_modal(
-                "ADVERTENCIA",
-                "Debes seleccionar al menos dos tarjetas con el hilo rojo para intentar formular una deducción.",
+                tr("ADVERTENCIA"),
+                tr("Debes seleccionar al menos dos tarjetas con el hilo rojo para intentar formular una deducción."),
             )
             return
 
@@ -475,16 +483,18 @@ class CorkboardState(BaseState):
             full_msg = (
                 f"{ded['titulo']}\n\n"
                 f"{ded['texto']}\n\n"
-                f"Efecto: {ded['unlock_text']}"
+                f"{tr('Efecto')}: {ded['unlock_text']}"
             )
-            self._show_modal(f"¡DEDUCCIÓN RESUELTA: {ded['id']}!", full_msg, is_success=True)
+            self._show_modal(f"{tr('¡DEDUCCIÓN RESUELTA:')} {ded['id']}!", full_msg, is_success=True)
         else:
             full_msg = (
                 f"'{msg}'\n\n"
-                f"Las pistas unidas no forman una relación lógica de causa y efecto. "
-                f"Revisa las palabras clave e inténtalo de nuevo."
+                + tr(
+                    "Las pistas unidas no forman una relación lógica de causa y efecto. "
+                    "Revisa las palabras clave e inténtalo de nuevo."
+                )
             )
-            self._show_modal("GALLAGHER — MONÓLOGO INTERIOR", full_msg, is_success=False)
+            self._show_modal(tr("GALLAGHER — MONÓLOGO INTERIOR"), full_msg, is_success=False)
 
     def _show_hint(self) -> None:
         if self.modal_active:
@@ -493,8 +503,8 @@ class CorkboardState(BaseState):
         if self.details_active:
             self._close_details()
 
-        hint = LAUREN_HINTS.get(self.visit, "Lauren no tiene más pistas por ahora.")
-        self._show_modal("CONSEJO DE LAUREN", f"Lauren se acerca a la pizarra:\n\n{hint}")
+        hint = tr(LAUREN_HINTS.get(self.visit, "Lauren no tiene más pistas por ahora."))
+        self._show_modal(tr("CONSEJO DE LAUREN"), f"{tr('Lauren se acerca a la pizarra:')}\n\n{hint}")
 
     def _exit_board(self) -> None:
         if self.modal_active:

@@ -12,6 +12,7 @@ from gale.text import render_text
 
 import settings
 from src.data.archive_data import COLORS, INTRO_TEXT
+from src.localization import localize, tr
 from src.text_utils import TypewriterEffect
 
 
@@ -22,7 +23,7 @@ class IntroSubstate(BaseState):
         self.typewriter = TypewriterEffect(char_speed=0.035)
 
     def enter(self, **kwargs):
-        self.typewriter.set_text(INTRO_TEXT)
+        self.typewriter.set_text(localize(INTRO_TEXT))
         self.alpha = 0.0
 
     def update(self, dt):
@@ -43,7 +44,7 @@ class IntroSubstate(BaseState):
 
         render_text(
             surface,
-            "ARCHIVO DE LA COMISARÍA",
+            tr("ARCHIVO DE LA COMISARÍA"),
             settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             20,
@@ -54,7 +55,7 @@ class IntroSubstate(BaseState):
 
         render_text(
             surface,
-            "— Sótano —",
+            tr("— Sótano —"),
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             42,
@@ -79,7 +80,7 @@ class IntroSubstate(BaseState):
         if self.typewriter.finished:
             render_text(
                 surface,
-                "ESPACIO para continuar",
+                tr("ESPACIO para continuar"),
                 settings.FONTS["medium"],
                 settings.VIRTUAL_WIDTH // 2,
                 240,

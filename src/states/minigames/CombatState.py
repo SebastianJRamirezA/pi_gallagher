@@ -9,6 +9,7 @@ from gale.input_handler import KeyboardData
 from gale.state import BaseState, StateMachine
 
 import settings
+from src.localization import tr
 from src.entity.Actor import Actor
 
 
@@ -266,7 +267,7 @@ class BanditBehavior(EnemyBehavior):
             self.entity.change_state("hit")
 
     def get_display_name(self) -> str:
-        return "MATÓN DE BLACKWOOD"
+        return tr("MATÓN DE BLACKWOOD")
 
     def get_collision_rect(self) -> pygame.Rect:
         return pygame.Rect(self.entity.x + 3, self.entity.y + 2, 25, 35)
@@ -519,7 +520,7 @@ class SteigerBehavior(EnemyBehavior):
             self.entity.change_state("hit")
 
     def get_display_name(self) -> str:
-        return "NIKO STEIGER 'EL TIGRE'"
+        return tr("NIKO STEIGER 'EL TIGRE'")
 
     def get_collision_rect(self) -> pygame.Rect:
         return pygame.Rect(self.entity.x + 2, self.entity.y + 2, 18, 26)
@@ -623,13 +624,13 @@ class CombatState(BaseState):
 
         if self.gallagher.hp <= 0:
             self.gallagher.hp = 0
-            self.status_text = "¡Has sido derrotado! Presiona ESPACIO para reintentar."
+            self.status_text = tr("¡Has sido derrotado! Presiona ESPACIO para reintentar.")
 
     def on_enemy_defeated(self) -> None:
         if self.enemy_id == "steiger":
-            self.status_text = "¡Has derrotado a Niko Stieger! Presiona ESPACIO para continuar."
+            self.status_text = tr("¡Has derrotado a Niko Stieger! Presiona ESPACIO para continuar.")
         else:
-            self.status_text = "¡Has derrotado al bandido! Presiona ESPACIO para continuar."
+            self.status_text = tr("¡Has derrotado al bandido! Presiona ESPACIO para continuar.")
 
     def _on_gallagher_shoot(self) -> None:
         settings.SOUNDS["gun_shot"].play()
@@ -788,7 +789,7 @@ class CombatState(BaseState):
         font = settings.FONTS["small"]
 
         # ── Vida de Gallagher (Arriba a la Izquierda) ──
-        salud_text = "GALLAGHER:"
+        salud_text = tr("GALLAGHER:")
         t_surf = font.render(salud_text, True, (210, 200, 185))
         surface.blit(t_surf, (14, 10))
 

@@ -9,6 +9,7 @@ floating notification banners, and semantic gating queries.
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from src.data.cards import CARDS, DEDUCTIONS, FAILURE_MONOLOGUES
+from src.localization import localize, tr
 
 
 class StoryManager:
@@ -70,7 +71,9 @@ class StoryManager:
             self.collected_cards.add(card_id)
             card = CARDS[card_id]
             tipo_label = "Pista" if card["tipo"] == "pista" else card["tipo"].capitalize()
-            self.push_notification(f"Nueva {tipo_label}: [{card_id}] {card['titulo']}")
+            self.push_notification(
+                f"{tr('Nueva')} {tr(tipo_label)}: [{card_id}] {localize(card['titulo'])}"
+            )
             return True
         return False
 
@@ -79,12 +82,12 @@ class StoryManager:
 
     def get_available_cards_for_corkboard(self) -> List[Dict[str, Any]]:
         """Return full card dicts for all collected cards."""
-        return [CARDS[cid] for cid in self.collected_cards if cid in CARDS]
+        return [localize(CARDS[cid]) for cid in self.collected_cards if cid in CARDS]
 
     # ── Notificaciones en Pantalla ──────────────────────────────────────────
 
     def push_notification(self, text: str, duration: float = 3.5) -> None:
-        self.notifications.append({"text": text, "timer": duration, "max": duration})
+        self.notifications.append({"text": tr(text), "timer": duration, "max": duration})
 
     def update_notifications(self, dt: float) -> None:
         remaining = []
@@ -109,20 +112,22 @@ class StoryManager:
         if zone == "museum":
             if self.level >= 1:
                 return True, ""
-            return False, "Primero debo hablar con la señorita Del Roscio en mi oficina."
+            return False, tr("Primero debo hablar con la señorita Del Roscio en mi oficina.")
 
         if zone == "police_station":
             if self.level >= 1:
                 return True, ""
-            return False, "Aún no tengo motivos para pasar por la comisaría central."
+            return False, tr("Aún no tengo motivos para pasar por la comisaría central.")
 
         if zone == "alley":
             if self.flags["corcho1_done"] or "D01" in self.validated_deductions:
                 return True, ""
             return (
                 False,
-                "No tengo nada que buscar en ese callejón todavía. Primero debo analizar "
-                "las pistas en la pizarra de corcho de mi oficina.",
+                tr(
+                    "No tengo nada que buscar en ese callejón todavía. Primero debo analizar "
+                    "las pistas en la pizarra de corcho de mi oficina."
+                ),
             )
 
         if zone == "nightclub":
@@ -130,8 +135,10 @@ class StoryManager:
                 return True, ""
             return (
                 False,
-                "El Club Velvet es un antro exclusivo de Cornelius Blackwood. "
-                "La puerta trasera y la mirilla están cerradas. Necesito una pista para entrar.",
+                tr(
+                    "El Club Velvet es un antro exclusivo de Cornelius Blackwood. "
+                    "La puerta trasera y la mirilla están cerradas. Necesito una pista para entrar."
+                ),
             )
 
         return True, ""
@@ -149,38 +156,42 @@ class StoryManager:
             if self.flags["archive_completed"]:
                 return (
                     False,
-                    "Ya he revisado los archivos policiales y recopilado los expedientes.",
+                    tr("Ya he revisado los archivos policiales y recopilado los expedientes."),
                 )
             if self.level >= 1:
                 return True, ""
-            return False, "El archivo está cerrado al público en este momento."
+            return False, tr("El archivo está cerrado al público en este momento.")
 
         if mg == "stealth":
             if self.flags["stealth_completed"]:
                 return (
                     False,
-                    "Ya he registrado las oficinas traseras y obtuve los documentos necesarios.",
+                    tr("Ya he registrado las oficinas traseras y obtuve los documentos necesarios."),
                 )
             if self.flags["sofia_club_talked"]:
                 return True, ""
             return (
                 False,
-                "La puerta a las oficinas traseras está custodiada. Debo reunirme con Sofia "
-                "en el reservado del club antes de adentrarme.",
+                tr(
+                    "La puerta a las oficinas traseras está custodiada. Debo reunirme con Sofia "
+                    "en el reservado del club antes de adentrarme."
+                ),
             )
 
         if mg == "safecracker":
             if self.flags["safecracker_completed"]:
                 return (
                     False,
-                    "La caja fuerte ya fue abierta y los documentos recuperados.",
+                    tr("La caja fuerte ya fue abierta y los documentos recuperados."),
                 )
             if self.flags["corcho3_done"] or "D03" in self.validated_deductions:
                 return True, ""
             return (
                 False,
-                "La pesada puerta acorazada de la bóveda está cerrada con llave maestra. "
-                "Debo consultar los planos y la llave en el corcho antes de intentar forzarla.",
+                tr(
+                    "La pesada puerta acorazada de la bóveda está cerrada con llave maestra. "
+                    "Debo consultar los planos y la llave en el corcho antes de intentar forzarla."
+                ),
             )
 
         return True, ""
@@ -208,7 +219,7 @@ class StoryManager:
         for ded_id, ded in DEDUCTIONS.items():
             if ded["required_cards"] == selected_set:
                 if ded["tipo"] == "ruido":
-                    return False, None, ded["unlock_text"]
+                    return False, None, tr(ded["unlock_text"])
 
                 # Deducción válida
                 if ded["tipo"] == "deduccion":
@@ -237,11 +248,10 @@ class StoryManager:
                     self.level = max(self.level, 7)
                     self.act = 5
 
-                self.push_notification(ded["unlock_text"])
-                return True, ded, ded["texto"]
+                self.push_notification(tr(ded["unlock_text"]))
+                return True, localize(ded), tr(ded["texto"])
 
         # Combinación no válida
         import random
         monologue = random.choice(FAILURE_MONOLOGUES)
-        return False, None, monologue
-
+        return False, None, tr(monologue)

@@ -24,4 +24,6 @@ class NPC(Actor):
     def dialogue(self) -> str:
         import random
 
-        return f"{self.name}: {random.choice(self.LINES)}"
+        from src.localization import tr
+
+        return f"{tr(self.name)}: {tr(random.choice(self.LINES))}"

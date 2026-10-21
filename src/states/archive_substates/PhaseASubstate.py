@@ -7,6 +7,7 @@ from gale.text import render_text
 
 import settings
 from src.data.archive_data import COLORS, CABINET, CATEGORY_ORDER, MAX_DRAWERS
+from src.localization import localize, tr
 
 
 class PhaseASubstate(BaseState):
@@ -109,7 +110,7 @@ class PhaseASubstate(BaseState):
         # Header title
         render_text(
             surface,
-            "MUEBLE FICHERO",
+            tr("MUEBLE FICHERO"),
             settings.FONTS["large"],
             12,
             8,
@@ -119,7 +120,7 @@ class PhaseASubstate(BaseState):
 
         # Drawer counter (right-aligned)
         remaining = MAX_DRAWERS - self.drawers_opened
-        status = f"Cajones restantes: {remaining}/{MAX_DRAWERS}"
+        status = f"{tr('Cajones restantes: ')}{remaining}/{MAX_DRAWERS}"
         status_w = settings.FONTS["medium"].size(status)[0]
         render_text(
             surface,
@@ -142,7 +143,7 @@ class PhaseASubstate(BaseState):
             pygame.draw.rect(surface, header_color, header_rect, border_radius=2)
             render_text(
                 surface,
-                cat_data["label"],
+                tr(cat_data["label"]),
                 settings.FONTS["medium"],
                 col_x + self.COL_WIDTH // 2,
                 self.HEADER_Y + 2,
@@ -185,7 +186,7 @@ class PhaseASubstate(BaseState):
                 label_color = COLORS["muted"] if is_opened else COLORS["paper"]
                 render_text(
                     surface,
-                    drawer["label"],
+                    tr(drawer["label"]),
                     settings.FONTS["medium"],
                     rect.x + 8,
                     rect.y + 6,
@@ -207,7 +208,7 @@ class PhaseASubstate(BaseState):
                 if is_opened:
                     render_text(
                         surface,
-                        "[abierto]",
+                        tr("[abierto]"),
                         settings.FONTS["medium"],
                         rect.x + 8,
                         rect.y + 22,
@@ -217,7 +218,7 @@ class PhaseASubstate(BaseState):
         # Controls hint
         render_text(
             surface,
-            "Flechas: Navegar   ESPACIO: Abrir cajón",
+            tr("Flechas: Navegar   ESPACIO: Abrir cajón"),
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             252,
@@ -247,7 +248,7 @@ class PhaseASubstate(BaseState):
         # Card header
         render_text(
             surface,
-            "FICHA DE ÍNDICE",
+            tr("FICHA DE ÍNDICE"),
             settings.FONTS["medium"],
             card_rect.centerx,
             cy + 8,
@@ -267,7 +268,7 @@ class PhaseASubstate(BaseState):
         # Drawer label
         render_text(
             surface,
-            self.current_card["label"],
+            tr(self.current_card["label"]),
             settings.FONTS["large"],
             cx + 15,
             cy + 30,
@@ -275,11 +276,11 @@ class PhaseASubstate(BaseState):
         )
 
         # Body text with reference highlighting
-        lines = self.current_card["text"].split("\n")
+        lines = localize(self.current_card["text"]).split("\n")
         y = cy + 55
         for line in lines:
             if line.strip():
-                if line.startswith("Véase:") or line.startswith(">>>"):
+                if line.startswith("Véase:") or line.startswith(">>>") or line.startswith("See:"):
                     color = COLORS["highlight"]
                 else:
                     color = COLORS["ink"]
@@ -299,7 +300,7 @@ class PhaseASubstate(BaseState):
         if self.found_goal:
             render_text(
                 surface,
-                "EXPEDIENTE LOCALIZADO",
+                tr("EXPEDIENTE LOCALIZADO"),
                 settings.FONTS["medium"],
                 card_rect.centerx,
                 card_rect.bottom - 32,
@@ -308,7 +309,7 @@ class PhaseASubstate(BaseState):
             )
         render_text(
             surface,
-            "ESPACIO para continuar",
+            tr("ESPACIO para continuar"),
             settings.FONTS["medium"],
             card_rect.centerx,
             card_rect.bottom - 14,

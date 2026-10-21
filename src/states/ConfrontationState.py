@@ -1,3 +1,4 @@
+from dataclasses import replace
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pygame
@@ -8,6 +9,7 @@ from gale.ui import Container, Label, UIManager, Window
 
 import settings
 from src.data.confrontation_data import MORALES_CONFRONTATION, SOFIA_CONFRONTATION, ConfrontationPhase
+from src.localization import localize, tr
 from src.story.StoryManager import StoryManager
 from src.ui import CardButton, CardGridContainer, DialogueTextBox
 from src.ui.theme import NOIR_CARD_THEME, NOIR_DIALOGUE_THEME
@@ -31,12 +33,24 @@ class ConfrontationState(BaseState):
         # Select confrontation
         if confrontation_id == "morales":
             self.phases = MORALES_CONFRONTATION
-            self.npc_name = "Morales"
+            self.npc_name = tr("Morales")
         elif confrontation_id == "sofia":
             self.phases = SOFIA_CONFRONTATION
-            self.npc_name = "Sofia Del Roscio"
+            self.npc_name = tr("Sofia Del Roscio")
         else:
             raise ValueError(f"Unknown confrontation_id: {confrontation_id}")
+
+        self.phases = [
+            replace(
+                phase,
+                **{
+                    key: localize(value)
+                    for key, value in vars(phase).items()
+                    if isinstance(value, str)
+                },
+            )
+            for phase in self.phases
+        ]
 
         # Filter phases by condition flag
         self.active_phases = [
@@ -230,7 +244,7 @@ class ConfrontationState(BaseState):
 
         elif self.phase_substate == "success_reaction":
             text = f"{phase.npc_reaction}\n{phase.success_dialogue}"
-            self._set_npc_dialogue(f"{self.npc_name} (RINCONADO)", text)
+            self._set_npc_dialogue(f"{self.npc_name}{tr(' (RINCONADO)')}", text)
             self.card_grid.enabled = False
             self.card_grid.visible = False
 
@@ -246,10 +260,10 @@ class ConfrontationState(BaseState):
             phase = self._get_current_phase()
             req = len(phase.required_cards)
             sel = len(self.selected_card_ids)
-            hint = phase.guidance_hint or f"Selecciona {req} evidencia(s) [{sel}/{req}]"
+            hint = phase.guidance_hint or f"{tr('Selecciona')} {req} {tr('evidencia(s)')} [{sel}/{req}]"
             self.hint_label.set_text(hint)
         else:
-            self.hint_label.set_text("[ESPACIO / ENTER] Continuar...")
+            self.hint_label.set_text(tr("[ESPACIO / ENTER] Continuar..."))
 
     def _on_typewriter_finished(self) -> None:
         pass

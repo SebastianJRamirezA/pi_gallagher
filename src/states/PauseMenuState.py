@@ -12,6 +12,7 @@ from gale.state import BaseState
 from gale.ui import Container, ListView, UIManager, Window
 
 import settings
+from src.localization import tr
 from src.ui.theme import NOIR_MENU_THEME
 
 
@@ -38,7 +39,7 @@ class PauseMenuState(BaseState):
             menu_y,
             menu_w,
             menu_h,
-            title="PAUSA",
+            title=tr("PAUSA"),
             closable=False,
             theme=NOIR_MENU_THEME,
         )
@@ -49,8 +50,8 @@ class PauseMenuState(BaseState):
             menu_w - 24,
             54,
             items=[
-                ("Continuar", on_continue),
-                ("Salir al Menú", on_quit),
+                (tr("Continuar"), on_continue),
+                (tr("Salir al Menú"), on_quit),
             ],
             theme=NOIR_MENU_THEME,
         )

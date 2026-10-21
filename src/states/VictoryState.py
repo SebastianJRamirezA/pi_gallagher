@@ -13,6 +13,7 @@ from gale.state import BaseState
 
 import settings
 from src.story.StoryManager import StoryManager
+from src.localization import tr
 
 
 class VictoryState(BaseState):
@@ -122,11 +123,11 @@ class VictoryState(BaseState):
         )
 
         # 2. Header
-        title = settings.FONTS["large"].render("CASO RESUELTO", True, (235, 215, 150))
+        title = settings.FONTS["large"].render(tr("CASO RESUELTO"), True, (235, 215, 150))
         surface.blit(title, title.get_rect(center=(settings.VIRTUAL_WIDTH // 2, 28)))
 
         subtitle = settings.FONTS["small"].render(
-            "P.I. GALLAGHER - THE MISSING ART", True, (170, 180, 190)
+            tr("P.I. GALLAGHER - THE MISSING ART"), True, (170, 180, 190)
         )
         surface.blit(subtitle, subtitle.get_rect(center=(settings.VIRTUAL_WIDTH // 2, 48)))
 
@@ -146,7 +147,7 @@ class VictoryState(BaseState):
 
         # Dossier Title
         dossier_title = settings.FONTS["small"].render(
-            "EXPEDIENTE POLICIAL N 1933-DL - CASO CERRADO", True, (212, 175, 55)
+            tr("EXPEDIENTE POLICIAL N 1933-DL - CASO CERRADO"), True, (212, 175, 55)
         )
         surface.blit(dossier_title, (box_x + 14, box_y + 8))
         pygame.draw.line(
@@ -159,10 +160,10 @@ class VictoryState(BaseState):
 
         # Bullet points
         lines = [
-            ("- Cuadro 'La Dama del Lirio':", " Recuperado de la boveda de Niko Stieger."),
-            ("- Guardia Morales:", " Confeso el soborno y su complicidad en el museo."),
-            ("- Niko Stieger 'El Tigre':", " Neutralizado en el sotano del Club Velvet."),
-            ("- Sofia Del Roscio:", " Desmascarada como socia de Blackwood y detenida."),
+            (tr("- Cuadro 'La Dama del Lirio':"), tr(" Recuperado de la boveda de Niko Stieger.")),
+            (tr("- Guardia Morales:"), tr(" Confeso el soborno y su complicidad en el museo.")),
+            (tr("- Niko Stieger 'El Tigre':"), tr(" Neutralizado en el sotano del Club Velvet.")),
+            (tr("- Sofia Del Roscio:"), tr(" Desmascarada como socia de Blackwood y detenida.")),
         ]
         for i, (bold_txt, desc_txt) in enumerate(lines):
             ly = box_y + 32 + (i * 17)
@@ -182,7 +183,9 @@ class VictoryState(BaseState):
         cards_count = len(self.story.collected_cards)
         deductions_count = len(self.story.validated_deductions)
         stats_txt = settings.FONTS["small"].render(
-            f"Pistas: {cards_count}/18   |   Deducciones: {deductions_count}/5   |   Veredicto: EXITO TOTAL",
+            tr("Pistas: {cards_count}/18   |   Deducciones: {deductions_count}/5   |   Veredicto: EXITO TOTAL").format(
+                cards_count=cards_count, deductions_count=deductions_count
+            ),
             True,
             (160, 195, 210),
         )
@@ -197,7 +200,7 @@ class VictoryState(BaseState):
         pygame.draw.rect(surface, bg0, self.btn_restart_rect)
         pygame.draw.rect(surface, border0, self.btn_restart_rect, 2 if is_b0 else 1)
         prefix0 = "> " if is_b0 else "  "
-        t0 = settings.FONTS["medium"].render(f"{prefix0}Reiniciar Historia", True, col0)
+        t0 = settings.FONTS["medium"].render(f"{prefix0}{tr('Reiniciar Historia')}", True, col0)
         surface.blit(t0, t0.get_rect(center=self.btn_restart_rect.center))
 
         # Button 1: Menú Principal
@@ -208,14 +211,13 @@ class VictoryState(BaseState):
         pygame.draw.rect(surface, bg1, self.btn_menu_rect)
         pygame.draw.rect(surface, border1, self.btn_menu_rect, 2 if is_b1 else 1)
         prefix1 = "> " if is_b1 else "  "
-        t1 = settings.FONTS["medium"].render(f"{prefix1}Menu Principal", True, col1)
+        t1 = settings.FONTS["medium"].render(f"{prefix1}{tr('Menu Principal')}", True, col1)
         surface.blit(t1, t1.get_rect(center=self.btn_menu_rect.center))
 
         # 5. Footer instructions
         footer = settings.FONTS["small"].render(
-            "[FLECHAS] Seleccionar   *   [ENTER / ESPACIO] Confirmar   *   [ESC] Salir",
+            tr("[FLECHAS] Seleccionar   *   [ENTER / ESPACIO] Confirmar   *   [ESC] Salir"),
             True,
             (120, 125, 135),
         )
         surface.blit(footer, footer.get_rect(center=(settings.VIRTUAL_WIDTH // 2, 246)))
-

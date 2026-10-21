@@ -26,6 +26,7 @@ from src.data.archive_data import (
     REQUIRED_CLUES,
     render_keyword_line,
 )
+from src.localization import localize, tr
 
 
 class PhaseBSubstate(BaseState):
@@ -35,7 +36,7 @@ class PhaseBSubstate(BaseState):
 
     def enter(self, **kwargs):
         # Shuffle documents so layout varies each attempt
-        self.shuffled_docs = list(PHASE_B_DOCUMENTS)
+        self.shuffled_docs = localize(PHASE_B_DOCUMENTS)
         random.shuffle(self.shuffled_docs)
 
         self.selected_doc = 0
@@ -199,7 +200,7 @@ class PhaseBSubstate(BaseState):
         )
         render_text(
             surface,
-            "Flechas: Seleccionar   ESPACIO: Examinar",
+            tr("Flechas: Seleccionar   ESPACIO: Examinar"),
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             min(hint_y, 250),
@@ -217,7 +218,7 @@ class PhaseBSubstate(BaseState):
         """Transition screen showing the located expedition before Phase B."""
         render_text(
             surface,
-            "EXPEDIENTE LOCALIZADO",
+            tr("EXPEDIENTE LOCALIZADO"),
             settings.FONTS["large"],
             settings.VIRTUAL_WIDTH // 2,
             25,
@@ -242,10 +243,10 @@ class PhaseBSubstate(BaseState):
         pygame.draw.rect(surface, COLORS["brass_dark"], card_rect, 2, border_radius=3)
 
         ref_lines = [
-            "Del Roscio, Museo",
-            "Robo de obra de arte",
-            "Denuncia: 13/03/1932",
-            "Asignado: Comisaría Central",
+            tr("Del Roscio, Museo"),
+            tr("Robo de obra de arte"),
+            tr("Denuncia: 13/03/1932"),
+            tr("Asignado: Comisaría Central"),
         ]
         y = card_rect.y + 10
         for line in ref_lines:
@@ -262,7 +263,7 @@ class PhaseBSubstate(BaseState):
 
         render_text(
             surface,
-            "Lauren lleva el expediente a la mesa...",
+            tr("Lauren lleva el expediente a la mesa..."),
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             195,
@@ -271,7 +272,7 @@ class PhaseBSubstate(BaseState):
         )
         render_text(
             surface,
-            "ESPACIO para continuar",
+            tr("ESPACIO para continuar"),
             settings.FONTS["medium"],
             settings.VIRTUAL_WIDTH // 2,
             230,
@@ -297,7 +298,7 @@ class PhaseBSubstate(BaseState):
         clue_color = COLORS["success"] if collected == len(REQUIRED_CLUES) else COLORS["text"]
         render_text(
             surface,
-            f"Pistas: {collected}/{len(REQUIRED_CLUES)}",
+            f"{tr('Pistas')}: {collected}/{len(REQUIRED_CLUES)}",
             settings.FONTS["medium"],
             12,
             28,
@@ -419,7 +420,7 @@ class PhaseBSubstate(BaseState):
             if is_collected:
                 render_text(
                     surface,
-                    "[OBTENIDA]",
+                    tr("[OBTENIDA]"),
                     settings.FONTS["medium"],
                     rect.x + 6,
                     rect.y + rect.height - 18,
@@ -428,7 +429,7 @@ class PhaseBSubstate(BaseState):
             elif is_examined and not doc["is_relevant"]:
                 render_text(
                     surface,
-                    "[leído]",
+                    tr("[leído]"),
                     settings.FONTS["medium"],
                     rect.x + 6,
                     rect.y + rect.height - 18,
@@ -493,13 +494,13 @@ class PhaseBSubstate(BaseState):
         # Prompt at bottom
         clue_id = doc.get("clue_id")
         if doc["is_relevant"] and clue_id and clue_id not in self.parent.collected_clues:
-            prompt = "ESPACIO: Recolectar pista"
+            prompt = tr("ESPACIO: Recolectar pista")
             prompt_color = COLORS["highlight"]
         elif doc["is_relevant"] and clue_id and clue_id in self.parent.collected_clues:
-            prompt = "Pista ya obtenida - ESPACIO: Cerrar"
+            prompt = tr("Pista ya obtenida - ESPACIO: Cerrar")
             prompt_color = COLORS["muted"]
         else:
-            prompt = "Sin pistas relevantes - ESPACIO: Cerrar"
+            prompt = tr("Sin pistas relevantes - ESPACIO: Cerrar")
             prompt_color = COLORS["muted"]
 
         render_text(

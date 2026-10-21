@@ -26,6 +26,7 @@ input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RETURN, "enter"
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_KP_ENTER, "enter")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_d, "details")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_h, "hint")
+input_handler.InputHandler.set_keyboard_action(input_handler.KEY_l, "language")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_p, "pause")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_LSHIFT, "fine")
 input_handler.InputHandler.set_keyboard_action(input_handler.KEY_RSHIFT, "fine")

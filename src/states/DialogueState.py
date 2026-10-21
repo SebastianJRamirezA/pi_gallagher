@@ -15,6 +15,7 @@ from gale.state import BaseState
 from gale.ui import Container, Label, UIManager, Window
 
 import settings
+from src.localization import localize, tr
 from src.ui import DialogueTextBox
 from src.ui.theme import NOIR_DIALOGUE_THEME
 
@@ -25,7 +26,8 @@ class DialogueState(BaseState):
         speaker: str = "",
         on_finish: Optional[Callable[[], None]] = None,
     ) -> None:
-        self.speaker = speaker or "P.I. Gallagher"
+        self.speaker = tr(speaker or "P.I. Gallagher")
+        text = localize(text)
         self.on_finish = on_finish
 
         self.root = Container(0, 0, settings.VIRTUAL_WIDTH, settings.VIRTUAL_HEIGHT)
@@ -100,13 +102,13 @@ class DialogueState(BaseState):
 
         nav_hints = []
         if current > 1:
-            nav_hints.append("◄ [IZQ] Atrás")
+            nav_hints.append(tr("◄ [IZQ] Atrás"))
         if current < total:
-            nav_hints.append("[ESPACIO] Avanzar ►")
+            nav_hints.append(tr("[ESPACIO] Avanzar ►"))
         else:
-            nav_hints.append("[ESPACIO] Cerrar")
+            nav_hints.append(tr("[ESPACIO] Cerrar"))
 
-        hint_str = f"Pág. {current}/{total}  |  " + "  ".join(nav_hints)
+        hint_str = f"{tr('Pág.')} {current}/{total}  |  " + "  ".join(nav_hints)
         self.hint_label.set_text(hint_str)
 
     def _close_dialogue(self) -> None:

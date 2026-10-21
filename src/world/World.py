@@ -28,6 +28,7 @@ from src.ui.theme import NOIR_PROMPT_THEME
 from src.world.Region import Region
 from src.world.Trigger import Trigger
 from src.text_utils import wrap_text
+from src.localization import tr
 
 
 class World:
@@ -169,7 +170,7 @@ class World:
                 if trigger.trigger_id in trigger_configs:
                     cfg = trigger_configs[trigger.trigger_id]
                     if not trigger.prompt_text:
-                        trigger.prompt_text = cfg["prompt"]
+                        trigger.prompt_text = tr(cfg["prompt"])
                     trigger.action_fn = cfg["action"]
 
     # ── Población de NPCs ───────────────────────────────────────────────────
@@ -473,7 +474,7 @@ class World:
 
         for npc in self.region.npcs:
             if player_rect.colliderect(npc.rect):
-                self.active_prompt = f"[ESPACIO] Hablar con {npc.name}"
+                self.active_prompt = f"{tr('[ESPACIO] Hablar con ')}{tr(npc.name)}"
                 self.active_interactable = npc
                 return
 
@@ -734,7 +735,7 @@ class World:
         font = settings.FONTS["medium"]
 
         if not self.story.notifications:
-            reg_text = self.current_region_name.upper()
+            reg_text = tr(self.current_region_name.upper())
             rw, rh = font.size(reg_text)
 
             reg_panel = Panel(10, 8, rw + 16, rh + 8, theme=NOIR_PROMPT_THEME)

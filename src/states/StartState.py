@@ -5,6 +5,7 @@ import pygame
 from gale.state import BaseState
 
 import settings
+from src.localization import get_language, toggle_language, tr
 
 
 class StartState(BaseState):
@@ -24,15 +25,14 @@ class StartState(BaseState):
         else:
             surface.fill((18, 24, 30))
 
-        # Placa inferior con el prompt de inicio
-        prompt_text = "Presiona Enter para investigar"
+        prompt_text = tr("Presiona Enter para investigar")
         font = settings.FONTS["medium"]
         tw, th = font.size(prompt_text)
 
         pill_w = tw + 20
         pill_h = th + 6
         pill_x = (settings.VIRTUAL_WIDTH - pill_w) // 2
-        pill_y = 238
+        pill_y = 222
 
         pill = pygame.Surface((pill_w, pill_h), pygame.SRCALPHA)
         pill.fill((10, 12, 16, 180))
@@ -42,7 +42,18 @@ class StartState(BaseState):
         txt = font.render(prompt_text, True, (240, 230, 200))
         surface.blit(txt, txt.get_rect(center=(settings.VIRTUAL_WIDTH // 2, pill_y + pill_h // 2)))
 
+        language_text = (
+            "Language: English  (L to change)"
+            if get_language() == "en"
+            else "Idioma: Español  (L para cambiar)"
+        )
+        language = settings.FONTS["small"].render(language_text, True, (220, 210, 190))
+        surface.blit(language, language.get_rect(center=(settings.VIRTUAL_WIDTH // 2, 258)))
+
     def on_input(self, input_id: str, input_data: Any) -> None:
+        if input_id == "language" and getattr(input_data, "pressed", False):
+            toggle_language()
+            return
         if input_id in ("enter", "space") and getattr(input_data, "pressed", False):
             from src.states.PlayState import PlayState
 
