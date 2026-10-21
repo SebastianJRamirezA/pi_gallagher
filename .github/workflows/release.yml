@@ -1,0 +1,121 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            channel: windows
+          - os: ubuntu-latest
+            channel: linux
+          - os: macos-latest
+            channel: osx
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: pyinstaller main.spec
+
+    - name: Zip build (Windows)
+      if: matrix.os == 'windows-latest'
+      run: Compress-Archive -Path dist/main/* -DestinationPath "${{ github.workspace }}/PIGallagher-${{ github.ref_name }}-Windows.zip"
+
+    - name: Zip build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd dist/main
+        zip -r "${{ github.workspace }}/PIGallagher-${{ github.ref_name }}-Linux.zip" .
+
+    - name: Zip build (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        cd dist
+        zip -r -y "${{ github.workspace }}/PIGallagher-${{ github.ref_name }}-macOS.zip" PIGallagher.app
+
+    - name: Upload Release to GitHub
+      uses: softprops/action-gh-release@v2
+      with:
+        files: PIGallagher-*.zip
+        generate_release_notes: false
+
+    - name: Upload Artifact for Itch.io
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.channel }}
+        path: PIGallagher-*.zip
+        retention-days: 1
+
+  publish-itch:
+    name: Publish to Itch.io
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-windows
+          path: itchio-builds
+
+      - name: Download Linux Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux
+          path: itchio-builds
+
+      - name: Download macOS Build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-osx
+          path: itchio-builds
+
+      - name: Push Windows to Itch.io
+        uses: manleydev/butler-publish-itchio-action@master
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: SebastianRami32
+          ITCH_GAME: pi-gallagher
+          CHANNEL: windows
+          PACKAGE: itchio-builds/PIGallagher-${{ github.ref_name }}-Windows.zip
+          VERSION: ${{ github.ref_name }}
+
+      - name: Push Linux to Itch.io
+        uses: manleydev/butler-publish-itchio-action@master
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: SebastianRami32
+          ITCH_GAME: pi-gallagher
+          CHANNEL: linux
+          PACKAGE: itchio-builds/PIGallagher-${{ github.ref_name }}-Linux.zip
+          VERSION: ${{ github.ref_name }}
+
+      - name: Push macOS to Itch.io
+        uses: manleydev/butler-publish-itchio-action@master
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: SebastianRami32
+          ITCH_GAME: pi-gallagher
+          CHANNEL: osx
+          PACKAGE: itchio-builds/PIGallagher-${{ github.ref_name }}-macOS.zip
+          VERSION: ${{ github.ref_name }}
