@@ -32,7 +32,6 @@ coll = COLLECT(
 if sys.platform == 'darwin':
     app = BUNDLE(
         coll,
-        name='MiJuego.app',
-        icon='assets/graphics/icon.icns',
-        bundle_identifier='com.miusuario.mijuego',
+        name='PIGallagher.app',
+        bundle_identifier='com.sebastianrami32.PIGallagher',
     )
